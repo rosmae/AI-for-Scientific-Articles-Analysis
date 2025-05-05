@@ -1,7 +1,14 @@
-from keybert import KeyBERT
+from pubmed_fetcher import search_pubmed, fetch_summaries
 
-kw_model = KeyBERT()
-doc = "Acute appendicitis is a common surgical emergency requiring immediate intervention."
-keywords = kw_model.extract_keywords(doc)
-
-print("Extracted keywords:", keywords)
+if __name__ == "__main__":
+    query = "cancer"
+    ids = search_pubmed(query)
+    print("PubMed IDs:", ids)
+    summaries = fetch_summaries(ids)
+    for article in summaries:
+        print("\n--- Article ---")
+        print("PMID:", article["PMID"])
+        print("Title:", article["Title"])
+        print("Abstract:", article["Abstract"])
+        print("DOI:", article["DOI"])
+        print("Authors:", ", ".join(article["Authors"]))
