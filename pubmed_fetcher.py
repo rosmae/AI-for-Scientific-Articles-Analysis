@@ -21,7 +21,10 @@ def fetch_summaries(id_list):
             "Title": record.get("TI", ""),
             "Abstract": record.get("AB", ""),
             "DOI": record.get("LID", ""),
-            "Authors": record.get("AU", [])
+            "Journal": record.get("JT", ""),
+            "PubDate": record.get("DP", ""),
+            "Authors": record.get("FAU", []),
+            "Affiliations": record.get("AD", [])
         }
         results.append(summary)
 
