@@ -57,7 +57,7 @@ def fetch_summaries(id_list):
             if doi:
                 summary["CitationCount"] = get_citation_count(doi)
             else:
-                summary["CitationCount"] = 0
+                summary["CitationCount"] = -1 
                 
             results.append(summary)
         

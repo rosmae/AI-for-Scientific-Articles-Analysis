@@ -1,6 +1,82 @@
-venv/
-__pycache__/
 *.pyc
-*.log
-.cache/
+src/venv/
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+build/
+/build/
+/build/ai_4_articles/
+dist/
+/dist/
+*.egg-info/
+*.egg
+*.whl
+*.zip
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Virtual environments
+venv
 .env
+.PyEnv/ 
+venv/ 
+.env/
+
+# PyInstaller / cx_Freeze artifacts
+*.spec
+build_ai_4_articles/
+dist/ai_4_articles.exe
+dist/
+
+# SQLite database file (if used)
+init_db.sqlite
+*.db
+
+# VS Code
+.vscode/
+
+# MacOS / Linux
+.DS_Store
+*.swp
+*~
+
+# Logs and databases
+*.log
+*.out
+*.err
+
+# IDE/editor folders
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Encrypted keyrings and credentials
+*.keyring
+
+# Coverage reports
+htmlcov/
+.coverage
+
+# pytest
+.cache/
+
+# mypy
+.mypy_cache/
+.dmypy.json
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Static asset builds (if you ever build front-end)
+node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log

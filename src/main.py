@@ -1,13 +1,23 @@
 #!/usr/bin/env python
 import sys
 import os
-import tkinter as tk
-from tkinter import ttk, messagebox, scrolledtext
 import threading
 from datetime import datetime
-# test
+import tkinter as tk
+from tkinter import ttk, messagebox, scrolledtext
+from pathlib import Path
+from dotenv import load_dotenv
 from db_manager import DatabaseManager
 from pubmed_fetcher import search_pubmed, fetch_summaries, fetch_by_subfield, calculate_subfield_metrics
+# fgcbgbn
+# Load environment variables and connect to the database
+ENV_PATH = Path(__file__).parent.parent / ".env"
+load_dotenv(dotenv_path=ENV_PATH)
+DB_HOST     = os.getenv("DATABASE_HOST")
+DB_PORT     = os.getenv("DATABASE_PORT")
+DB_NAME     = os.getenv("DATABASE_NAME")
+DB_USER     = os.getenv("DATABASE_USERNAME")
+DB_PASSWORD = os.getenv("DATABASE_PASSWORD")
 
 def resource_path(relative_path: str) -> str:
     """Get absolute path to resource, works for dev and for PyInstaller --onefile bundles."""
@@ -71,23 +81,23 @@ class PrimeTimeApp:
         
         # Database fields
         ttk.Label(form_frame, text="Host:").grid(row=0, column=0, sticky=tk.W, padx=5, pady=2)
-        self.host_var = tk.StringVar(value="localhost")
+        self.host_var = tk.StringVar(value=DB_HOST)
         ttk.Entry(form_frame, textvariable=self.host_var, width=15).grid(row=0, column=1, sticky=tk.W, padx=5, pady=2)
         
         ttk.Label(form_frame, text="Port:").grid(row=0, column=2, sticky=tk.W, padx=5, pady=2)
-        self.port_var = tk.StringVar(value="5432")
+        self.port_var = tk.StringVar(value=DB_PORT)
         ttk.Entry(form_frame, textvariable=self.port_var, width=10).grid(row=0, column=3, sticky=tk.W, padx=5, pady=2)
         
         ttk.Label(form_frame, text="Database:").grid(row=1, column=0, sticky=tk.W, padx=5, pady=2)
-        self.dbname_var = tk.StringVar(value="prime_time")
+        self.dbname_var = tk.StringVar(value=DB_NAME)
         ttk.Entry(form_frame, textvariable=self.dbname_var, width=15).grid(row=1, column=1, sticky=tk.W, padx=5, pady=2)
         
         ttk.Label(form_frame, text="Username:").grid(row=1, column=2, sticky=tk.W, padx=5, pady=2)
-        self.user_var = tk.StringVar(value="postgres")
+        self.user_var = tk.StringVar(value=DB_USER)
         ttk.Entry(form_frame, textvariable=self.user_var, width=15).grid(row=1, column=3, sticky=tk.W, padx=5, pady=2)
         
         ttk.Label(form_frame, text="Password:").grid(row=1, column=4, sticky=tk.W, padx=5, pady=2)
-        self.password_var = tk.StringVar(value="postgres")
+        self.password_var = tk.StringVar(value=DB_PASSWORD)
         ttk.Entry(form_frame, textvariable=self.password_var, show="*", width=15).grid(row=1, column=5, sticky=tk.W, padx=5, pady=2)
         
         # Connect button
