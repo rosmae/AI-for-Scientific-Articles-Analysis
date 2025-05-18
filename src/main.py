@@ -9,7 +9,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from db_manager import DatabaseManager
 from pubmed_fetcher import search_pubmed, fetch_summaries, fetch_by_subfield, calculate_subfield_metrics
-
+# fgcbgbn
 # Load environment variables and connect to the database
 ENV_PATH = Path(__file__).parent.parent / ".env"
 load_dotenv(dotenv_path=ENV_PATH)
