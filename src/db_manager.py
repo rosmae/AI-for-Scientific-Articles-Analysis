@@ -4,6 +4,9 @@ from psycopg2.extras import RealDictCursor
 import os
 import sys
 from datetime import datetime
+from dotenv import load_dotenv
+load_dotenv()
+
 
 def resource_path(relative_path: str) -> str:
     """Get absolute path to resource, works for dev and for PyInstaller --onefile bundles."""
@@ -11,16 +14,17 @@ def resource_path(relative_path: str) -> str:
     return os.path.join(base_path, relative_path)
 
 class DatabaseManager:
-    def __init__(self, dbname="prime_time", user="postgres", password="postgres", host="localhost", port="5432"):
+    def __init__(self, dbname=None, user=None, password=None, host=None, port=None):
         self.connection_params = {
-            "dbname": dbname,
-            "user": user,
-            "password": password,
-            "host": host,
-            "port": port
+            "dbname": dbname or os.getenv("DATABASE_NAME"),
+            "user": user or os.getenv("DATABASE_USERNAME"),
+            "password": password or os.getenv("DATABASE_PASSWORD"),
+            "host": host or os.getenv("DATABASE_HOST"),
+            "port": port or os.getenv("DATABASE_PORT")
         }
         self.conn = None
         self.connected = False
+
     
     def connect(self):
         """Connect to the PostgreSQL database server"""
@@ -115,13 +119,15 @@ class DatabaseManager:
                         (article_id, author_id)
                     )
                 
-                # Insert citation count (initially 0 as we don't have this data yet)
+                # Insert citation count
+                citation_count = article_data.get("CitationCount", 0)
+
                 cur.execute(
-                    """
-                    INSERT INTO citations (article_id, source, count, last_update)
-                    VALUES (%s, %s, %s, %s)
-                    """,
-                    (article_id, "pubmed", 0, datetime.now().date())
+                """
+                INSERT INTO citations (article_id, source, count, last_update)
+                VALUES (%s, %s, %s, %s)
+                """,
+                (article_id, "crossref", citation_count, datetime.now().date())
                 )
                 
             self.conn.commit()
