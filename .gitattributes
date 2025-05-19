@@ -1,3 +1,5 @@
+*.tex linguist-detectable=false
 *.html linguist-detectable=false
 *.htm linguist-detectable=false
-*.tex linguist-detectable=false
+docs/** linguist-detectable=false
+report/** linguist-detectable=false
