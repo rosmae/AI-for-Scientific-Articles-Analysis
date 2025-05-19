@@ -1,5 +1,6 @@
-*.tex linguist-detectable=false
-*.html linguist-detectable=false
-*.htm linguist-detectable=false
-docs/** linguist-detectable=false
-report/** linguist-detectable=false
+*.tex linguist-vendored
+*.html linguist-vendored
+*.htm linguist-vendored
+docs/** linguist-vendored
+report/** linguist-vendored
+
