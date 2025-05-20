@@ -16,11 +16,11 @@ def resource_path(relative_path: str) -> str:
 class DatabaseManager:
     def __init__(self, dbname=None, user=None, password=None, host=None, port=None):
         self.connection_params = {
-            "dbname": "prime_time" or os.getenv("DATABASE_NAME"),
-            "user": "postgres" or os.getenv("DATABASE_USERNAME"),
-            "password": "postgres" or os.getenv("DATABASE_PASSWORD"),
-            "host": "localhost" or os.getenv("DATABASE_HOST"),
-            "port": "5432" or os.getenv("DATABASE_PORT")
+            "dbname": dbname or os.getenv("DATABASE_NAME"),
+            "user": user or os.getenv("DATABASE_USERNAME"),
+            "password": password or os.getenv("DATABASE_PASSWORD"),
+            "host": host or os.getenv("DATABASE_HOST"),
+            "port": port or os.getenv("DATABASE_PORT")
         }
         self.conn = None
         self.connected = False
