@@ -1,6 +1,11 @@
+
 *.tex linguist-vendored
+*.TEX linguist-vendored     
+# Ignore HTML files
 *.html linguist-vendored
-*.htm linguist-vendored
-docs/** linguist-vendored
-report/** linguist-vendored
+*.htm  linguist-vendored
+
+
+docs/**    linguist-vendored
+report/**  linguist-vendored
 
