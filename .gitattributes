@@ -1,6 +1,7 @@
 
 *.tex linguist-vendored
-*.TEX linguist-vendored     
+*.TEX linguist-vendored  
+*.TeX linguist-vendored 
 # Ignore HTML files
 *.html linguist-vendored
 *.htm  linguist-vendored
