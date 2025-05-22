@@ -140,6 +140,16 @@ class PrimeTimeApp:
         self.subfield_var = tk.StringVar()
         self.subfield_combobox = ttk.Combobox(subfield_frame, textvariable=self.subfield_var, values=common_subfields, width=20)
         self.subfield_combobox.pack(side=tk.LEFT, padx=5)
+
+        # Date range inputs
+        ttk.Label(subfield_frame, text="Start Date (YYYY-MM-DD):").pack(side=tk.LEFT, padx=5)
+        self.start_date_var = tk.StringVar()
+        ttk.Entry(subfield_frame, textvariable=self.start_date_var, width=12).pack(side=tk.LEFT)
+
+        ttk.Label(subfield_frame, text="End Date (YYYY-MM-DD):").pack(side=tk.LEFT, padx=5)
+        self.end_date_var = tk.StringVar()
+        ttk.Entry(subfield_frame, textvariable=self.end_date_var, width=12).pack(side=tk.LEFT)
+
         
         self.subfield_search_btn = ttk.Button(subfield_frame, text="Analyze Subfield", command=self.analyze_subfield)
         self.subfield_search_btn.pack(side=tk.LEFT, padx=10)
@@ -270,7 +280,10 @@ class PrimeTimeApp:
                 self.status_var.set(f"Searching PubMed for '{query}'...")
                 self.search_btn.config(state=tk.DISABLED)
                 
-                pmids = search_pubmed(query, max_results)
+                start_date = self.start_date_var.get().strip() or None
+                end_date = self.end_date_var.get().strip() or None
+                
+                pmids = search_pubmed(query, max_results, start_date=start_date, end_date=end_date)
                 if not pmids:
                     self.root.after(0, lambda: messagebox.showinfo("Search Results", "No results found."))
                     self.root.after(0, lambda: self.status_var.set("No results found"))
@@ -315,8 +328,13 @@ class PrimeTimeApp:
                 self.status_var.set(f"Analyzing subfield: {subfield}...")
                 self.subfield_search_btn.config(state=tk.DISABLED)
                 
+                # Read date range from inputs
+                start_date = self.start_date_var.get().strip() or None
+                end_date = self.end_date_var.get().strip() or None
+
                 # Fetch articles for this subfield
-                articles = fetch_by_subfield(subfield, 20)
+                articles = fetch_by_subfield(subfield, 20, start_date=start_date, end_date=end_date)
+
                 
                 # Store articles in database
                 count = 0

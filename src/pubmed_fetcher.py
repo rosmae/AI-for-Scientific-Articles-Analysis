@@ -7,9 +7,12 @@ import re
 # Set your email (required by NCBI)
 Entrez.email = "maia.marin94@e-uvt.ro"
 
-def search_pubmed(query, max_results=10):
+def search_pubmed(query, max_results=10, start_date=None, end_date=None):
     """Search PubMed for the query and return a list of PMIDs"""
     try:
+        if start_date and end_date:
+            query += f' AND ("{start_date}"[PDAT] : "{end_date}"[PDAT])'
+        
         handle = Entrez.esearch(db="pubmed", term=query, retmax=max_results)
         record = Entrez.read(handle)
         handle.close()
@@ -87,10 +90,10 @@ def get_citation_count(doi):
         print(f"Error getting citation count: {e}")
         return 0
 
-def fetch_by_subfield(subfield, max_results=10):
+def fetch_by_subfield(subfield, max_results=10, start_date=None, end_date=None):
     """Search PubMed for a specific medical subfield"""
     query = f"{subfield}[MeSH Terms]"
-    ids = search_pubmed(query, max_results)
+    ids = search_pubmed(query, max_results, start_date=start_date, end_date=end_date)
     return fetch_summaries(ids)
 
 def calculate_subfield_metrics(articles):
