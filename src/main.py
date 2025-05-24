@@ -322,10 +322,28 @@ class PrimeTimeApp:
             return
 
         try:
-            keywords = self.keyword_extractor.extract_keywords(idea, top_n=10)
-            keyword_strings = [kw[0] for kw in keywords]
+            raw_keywords = self.keyword_extractor.extract_keywords(
+                idea,
+                keyphrase_ngram_range=(1, 4),
+                stop_words='english',
+                use_maxsum=True,
+                nr_candidates=20,
+                top_n=10
+            )
+
+            phrases = [kw[0] for kw in raw_keywords]
+            final_keywords = []
+
+            for phrase in phrases:
+                # Only keep it if it's not a unigram contained in a longer phrase
+                if len(phrase.split()) == 1:
+                    if not any(phrase in longer for longer in phrases if len(longer.split()) > 1):
+                        final_keywords.append(phrase)
+                else:
+                    final_keywords.append(phrase)
+
             self.keywords_text.delete("1.0", tk.END)
-            self.keywords_text.insert(tk.END, "; ".join(keyword_strings))
+            self.keywords_text.insert(tk.END, "; ".join(final_keywords))
         except Exception as e:
             messagebox.showerror("Error", f"Keyword extraction failed: {e}")
 
