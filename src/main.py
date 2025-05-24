@@ -8,7 +8,10 @@ from tkinter import ttk, messagebox, scrolledtext
 from pathlib import Path
 from dotenv import load_dotenv
 from db_manager import DatabaseManager
-from pubmed_fetcher import search_pubmed, fetch_summaries, fetch_by_subfield, calculate_subfield_metrics
+from pubmed_fetcher import search_pubmed, fetch_summaries
+from mesh_expander import expand_with_mesh
+from transformers import AutoModel, AutoTokenizer
+from keybert import KeyBERT
 
 # Load environment variables and connect to the database
 ENV_PATH = Path(__file__).parent.parent / ".env"
@@ -26,9 +29,12 @@ def resource_path(relative_path: str) -> str:
 
 class PrimeTimeApp:
     def __init__(self, root):
+        biobert_model = AutoModel.from_pretrained("dmis-lab/biobert-base-cased-v1.1")
+        biobert_tokenizer = AutoTokenizer.from_pretrained("dmis-lab/biobert-base-cased-v1.1")
+        self.keyword_extractor = KeyBERT(model=biobert_model)
         self.root = root
         self.root.title("Prime Time Medical Research Opportunities")
-        self.root.geometry("1000x700")
+        self.root.geometry("1350x750")
         
         # Database manager
         self.db = DatabaseManager()
@@ -49,11 +55,7 @@ class PrimeTimeApp:
         self.search_frame.pack(fill=tk.X, pady=10)
         
         # Add search widgets
-        self.create_search_widgets()
-        
-        # Results frame
-        self.results_frame = ttk.LabelFrame(self.main_frame, text="Articles in Database", padding="10")
-        self.results_frame.pack(fill=tk.BOTH, expand=True, pady=10)
+        self.create_search_widgets()        
         
         # Add results widgets
         self.create_results_widgets()
@@ -75,86 +77,75 @@ class PrimeTimeApp:
         self.initialize_app()
     
     def create_db_config_widgets(self):
-        # Create a frame for the form fields
         form_frame = ttk.Frame(self.db_frame)
         form_frame.pack(fill=tk.X, pady=5)
-        
-        # Database fields
-        ttk.Label(form_frame, text="Host:").grid(row=0, column=0, sticky=tk.W, padx=5, pady=2)
+
+        ttk.Label(form_frame, text="Host:").grid(row=0, column=0, sticky=tk.W, padx=5)
         self.host_var = tk.StringVar(value=DB_HOST)
-        ttk.Entry(form_frame, textvariable=self.host_var, width=15).grid(row=0, column=1, sticky=tk.W, padx=5, pady=2)
-        
-        ttk.Label(form_frame, text="Port:").grid(row=0, column=2, sticky=tk.W, padx=5, pady=2)
+        ttk.Entry(form_frame, textvariable=self.host_var, width=15).grid(row=0, column=1, padx=2)
+
+        ttk.Label(form_frame, text="Port:").grid(row=0, column=2, sticky=tk.W, padx=5)
         self.port_var = tk.StringVar(value=DB_PORT)
-        ttk.Entry(form_frame, textvariable=self.port_var, width=10).grid(row=0, column=3, sticky=tk.W, padx=5, pady=2)
-        
-        ttk.Label(form_frame, text="Database:").grid(row=1, column=0, sticky=tk.W, padx=5, pady=2)
+        ttk.Entry(form_frame, textvariable=self.port_var, width=6).grid(row=0, column=3, padx=2)
+
+        ttk.Label(form_frame, text="Database:").grid(row=0, column=4, sticky=tk.W, padx=5)
         self.dbname_var = tk.StringVar(value=DB_NAME)
-        ttk.Entry(form_frame, textvariable=self.dbname_var, width=15).grid(row=1, column=1, sticky=tk.W, padx=5, pady=2)
-        
-        ttk.Label(form_frame, text="Username:").grid(row=1, column=2, sticky=tk.W, padx=5, pady=2)
+        ttk.Entry(form_frame, textvariable=self.dbname_var, width=15).grid(row=0, column=5, padx=2)
+
+        ttk.Label(form_frame, text="Username:").grid(row=0, column=6, sticky=tk.W, padx=5)
         self.user_var = tk.StringVar(value=DB_USER)
-        ttk.Entry(form_frame, textvariable=self.user_var, width=15).grid(row=1, column=3, sticky=tk.W, padx=5, pady=2)
-        
-        ttk.Label(form_frame, text="Password:").grid(row=1, column=4, sticky=tk.W, padx=5, pady=2)
+        ttk.Entry(form_frame, textvariable=self.user_var, width=15).grid(row=0, column=7, padx=2)
+
+        ttk.Label(form_frame, text="Password:").grid(row=0, column=8, sticky=tk.W, padx=5)
         self.password_var = tk.StringVar(value=DB_PASSWORD)
-        ttk.Entry(form_frame, textvariable=self.password_var, show="*", width=15).grid(row=1, column=5, sticky=tk.W, padx=5, pady=2)
-        
-        # Connect button
+        ttk.Entry(form_frame, textvariable=self.password_var, show="*", width=15).grid(row=0, column=9, padx=2)
+
         self.connect_btn = ttk.Button(form_frame, text="Connect", command=self.connect_to_db)
-        self.connect_btn.grid(row=0, column=5, rowspan=1, sticky=tk.E, padx=5, pady=2)
-        
-        # Initialize button
-        self.init_db_btn = ttk.Button(form_frame, text="Initialize DB", command=self.initialize_db, state=tk.DISABLED)
-        self.init_db_btn.grid(row=0, column=4, rowspan=1, sticky=tk.E, padx=5, pady=2)
-    
+        self.connect_btn.grid(row=0, column=11, padx=5)
+
     def create_search_widgets(self):
-        # Search fields
-        search_input_frame = ttk.Frame(self.search_frame)
-        search_input_frame.pack(fill=tk.X, pady=5)
-        
-        ttk.Label(search_input_frame, text="Search Term:").pack(side=tk.LEFT, padx=5)
-        self.search_var = tk.StringVar()
-        self.search_entry = ttk.Entry(search_input_frame, textvariable=self.search_var, width=40)
-        self.search_entry.pack(side=tk.LEFT, padx=5)
-        
-        ttk.Label(search_input_frame, text="Max Results:").pack(side=tk.LEFT, padx=5)
-        self.max_results_var = tk.StringVar(value="10")
-        self.max_results_spinbox = ttk.Spinbox(search_input_frame, from_=1, to=50, textvariable=self.max_results_var, width=5)
-        self.max_results_spinbox.pack(side=tk.LEFT, padx=5)
-        
-        self.search_btn = ttk.Button(search_input_frame, text="Search PubMed", command=self.search_pubmed)
-        self.search_btn.pack(side=tk.LEFT, padx=10)
+        self.search_container = ttk.Frame(self.search_frame)
+        self.search_container.pack(fill=tk.BOTH, expand=True)
+
+        self.left_right_frame = ttk.Frame(self.search_container)
+        self.left_right_frame.pack(fill=tk.BOTH, expand=True)
+
+        self.left_frame = ttk.Frame(self.left_right_frame, width=400)
+        self.left_frame.pack(side=tk.LEFT, fill=tk.Y, padx=10, pady=10)
+
+        ttk.Label(self.left_frame, text="Type in your research idea:").pack(anchor=tk.W, padx=5, pady=(5, 0))
+        self.idea_text = tk.Text(self.left_frame, height=6, width=50, wrap=tk.WORD)
+        self.idea_text.pack(padx=5, pady=5)
+
+        self.generate_btn = ttk.Button(self.left_frame, text="Generate", command=self.generate_keywords)
+        self.generate_btn.pack(padx=5, pady=5)
+
+        ttk.Label(self.left_frame, text="Keywords:").pack(anchor=tk.W, padx=5, pady=(10, 0))
+        self.keywords_text = tk.Text(self.left_frame, height=6, width=50, wrap=tk.WORD)
+        self.keywords_text.pack(padx=5, pady=5)
+
+        self.search_btn = ttk.Button(self.left_frame, text="Search PubMed", command=self.search_pubmed)
+        self.search_btn.pack(padx=5, pady=(10, 0))
         self.search_btn.config(state=tk.DISABLED)
-        
-        # Subfield search
-        subfield_frame = ttk.Frame(self.search_frame)
-        subfield_frame.pack(fill=tk.X, pady=5)
-        
-        common_subfields = [
-            "Oncology", "Cardiology", "Neurology", "Immunology", 
-            "Psychiatry", "Pediatrics", "Endocrinology", "Infectious Disease"
-        ]
-        
-        ttk.Label(subfield_frame, text="Subfield:").pack(side=tk.LEFT, padx=5)
-        self.subfield_var = tk.StringVar()
-        self.subfield_combobox = ttk.Combobox(subfield_frame, textvariable=self.subfield_var, values=common_subfields, width=20)
-        self.subfield_combobox.pack(side=tk.LEFT, padx=5)
 
-        # Date range inputs
-        ttk.Label(subfield_frame, text="Start Date (YYYY-MM-DD):").pack(side=tk.LEFT, padx=5)
+        self.results_frame = ttk.LabelFrame(self.left_right_frame, text="Articles in Database", padding="10")
+        self.results_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        date_frame = ttk.Frame(self.search_frame)
+        date_frame.pack(fill=tk.X, pady=5)
+
+        ttk.Label(date_frame, text="Start Date (YYYY-MM-DD):").pack(side=tk.LEFT, padx=5)
         self.start_date_var = tk.StringVar()
-        ttk.Entry(subfield_frame, textvariable=self.start_date_var, width=12).pack(side=tk.LEFT)
+        ttk.Entry(date_frame, textvariable=self.start_date_var, width=12).pack(side=tk.LEFT)
 
-        ttk.Label(subfield_frame, text="End Date (YYYY-MM-DD):").pack(side=tk.LEFT, padx=5)
+        ttk.Label(date_frame, text="End Date (YYYY-MM-DD):").pack(side=tk.LEFT, padx=5)
         self.end_date_var = tk.StringVar()
-        ttk.Entry(subfield_frame, textvariable=self.end_date_var, width=12).pack(side=tk.LEFT)
+        ttk.Entry(date_frame, textvariable=self.end_date_var, width=12).pack(side=tk.LEFT)
 
-        
-        self.subfield_search_btn = ttk.Button(subfield_frame, text="Analyze Subfield", command=self.analyze_subfield)
-        self.subfield_search_btn.pack(side=tk.LEFT, padx=10)
-        self.subfield_search_btn.config(state=tk.DISABLED)
-    
+        ttk.Label(date_frame, text="Max Results:").pack(side=tk.LEFT, padx=10)
+        self.max_results_var = tk.StringVar(value="10")
+        ttk.Spinbox(date_frame, from_=1, to=50, textvariable=self.max_results_var, width=5).pack(side=tk.LEFT)
+
     def create_results_widgets(self):
         # Create a frame for the table
         table_frame = ttk.Frame(self.results_frame)
@@ -239,10 +230,8 @@ class PrimeTimeApp:
             
             if self.db.connect():
                 self.status_var.set(f"Connected to database {self.dbname_var.get()}")
-                self.init_db_btn.config(state=tk.NORMAL)
                 self.refresh_btn.config(state=tk.NORMAL)
                 self.search_btn.config(state=tk.NORMAL)
-                self.subfield_search_btn.config(state=tk.NORMAL)
                 self.refresh_articles()
             else:
                 messagebox.showerror("Connection Error", "Failed to connect to database.")
@@ -264,8 +253,18 @@ class PrimeTimeApp:
             messagebox.showerror("Error", f"An error occurred: {e}")
     
     def search_pubmed(self):
-        """Search PubMed and store results in database"""
-        query = self.search_var.get().strip()
+        raw_keywords = self.keywords_text.get("1.0", tk.END).strip().replace("\n", " ")
+        keyword_list = [kw.strip() for kw in raw_keywords.split(";") if kw.strip()]
+        query_groups = []
+
+        for kw in keyword_list:
+            expanded = expand_with_mesh(kw)
+        if expanded:
+            group = "(" + " OR ".join(expanded) + ")"
+            query_groups.append(group)
+
+        query = " AND ".join(query_groups)
+
         if not query:
             messagebox.showwarning("Warning", "Please enter a search term.")
             return
@@ -316,67 +315,26 @@ class PrimeTimeApp:
         # Run search in a separate thread
         threading.Thread(target=search_task, daemon=True).start()
     
+    def generate_keywords(self):
+        idea = self.idea_text.get("1.0", tk.END).strip()
+        if not idea:
+            messagebox.showwarning("Warning", "Please enter your research idea first.")
+            return
+
+        try:
+            keywords = self.keyword_extractor.extract_keywords(idea, top_n=10)
+            keyword_strings = [kw[0] for kw in keywords]
+            self.keywords_text.delete("1.0", tk.END)
+            self.keywords_text.insert(tk.END, "; ".join(keyword_strings))
+        except Exception as e:
+            messagebox.showerror("Error", f"Keyword extraction failed: {e}")
+
     def analyze_subfield(self):
         """Analyze a specific medical subfield"""
         subfield = self.subfield_var.get().strip()
         if not subfield:
             messagebox.showwarning("Warning", "Please select or enter a subfield.")
             return
-        
-        def analysis_task():
-            try:
-                self.status_var.set(f"Analyzing subfield: {subfield}...")
-                self.subfield_search_btn.config(state=tk.DISABLED)
-                
-                # Read date range from inputs
-                start_date = self.start_date_var.get().strip() or None
-                end_date = self.end_date_var.get().strip() or None
-
-                # Fetch articles for this subfield
-                articles = fetch_by_subfield(subfield, 20, start_date=start_date, end_date=end_date)
-
-                
-                # Store articles in database
-                count = 0
-                for article in articles:
-                    if not self.db.article_exists(article["PMID"]):
-                        article_id = self.db.insert_article(article)
-                        if article_id:
-                            count += 1
-                
-                # Calculate metrics
-                metrics = calculate_subfield_metrics(articles)
-                
-                # Update UI
-                self.root.after(0, lambda: self.update_metrics_display(metrics, subfield))
-                self.root.after(0, lambda: self.refresh_articles())
-                self.root.after(0, lambda: self.status_var.set(f"Added {count} new articles for subfield: {subfield}"))
-            except Exception as e:
-                self.root.after(0, lambda: messagebox.showerror("Error", f"An error occurred: {e}"))
-                self.root.after(0, lambda: self.status_var.set("Analysis error"))
-            finally:
-                self.root.after(0, lambda: self.subfield_search_btn.config(state=tk.NORMAL))
-        
-        # Run analysis in a separate thread
-        threading.Thread(target=analysis_task, daemon=True).start()
-    
-    def update_metrics_display(self, metrics, subfield):
-        """Update the metrics display with calculated values"""
-        self.publication_count_var.set(f"Publications: {metrics['publication_count']}")
-        self.total_citations_var.set(f"Total Citations: {metrics['total_citations']}")
-        self.avg_citations_var.set(f"Avg Citations: {metrics['avg_citations']}")
-        self.score_var.set(f"{metrics['opportunity_score']}")
-        
-        # Set recommendation based on score
-        if metrics['opportunity_score'] > 60:
-            recommendation = "HIGH OPPORTUNITY - Consider researching this area"
-            self.recommendation_var.set(recommendation)
-        elif metrics['opportunity_score'] > 30:
-            recommendation = "MEDIUM OPPORTUNITY - Has potential"
-            self.recommendation_var.set(recommendation)
-        else:
-            recommendation = "LOW OPPORTUNITY - Likely saturated or low impact"
-            self.recommendation_var.set(recommendation)
     
     def refresh_articles(self):
         """Refresh articles displayed in the treeview"""

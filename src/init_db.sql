@@ -46,31 +46,3 @@ CREATE TABLE IF NOT EXISTS affiliations (
     full_address TEXT,
     FOREIGN KEY (author_id) REFERENCES authors(id) ON DELETE CASCADE
 );
-
--- Subfields table for categorization
-CREATE TABLE IF NOT EXISTS subfields (
-    id SERIAL PRIMARY KEY,
-    name TEXT UNIQUE,
-    description TEXT
-);
-
--- Articles-Subfields join table
-CREATE TABLE IF NOT EXISTS articles_subfields (
-    article_id INTEGER NOT NULL,
-    subfield_id INTEGER NOT NULL,
-    PRIMARY KEY (article_id, subfield_id),
-    FOREIGN KEY (article_id) REFERENCES articles(id) ON DELETE CASCADE,
-    FOREIGN KEY (subfield_id) REFERENCES subfields(id) ON DELETE CASCADE
-);
-
--- Subfield metrics table
-CREATE TABLE IF NOT EXISTS subfield_metrics (
-    id SERIAL PRIMARY KEY,
-    subfield_id INTEGER,
-    publication_count INTEGER,
-    total_citations INTEGER,
-    avg_citations FLOAT,
-    opportunity_score FLOAT,
-    calculation_date DATE,
-    FOREIGN KEY (subfield_id) REFERENCES subfields(id) ON DELETE CASCADE
-);
