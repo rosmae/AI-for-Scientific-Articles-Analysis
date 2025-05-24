@@ -29,9 +29,10 @@ def resource_path(relative_path: str) -> str:
 
 class PrimeTimeApp:
     def __init__(self, root):
-        biobert_model = AutoModel.from_pretrained("dmis-lab/biobert-base-cased-v1.1")
-        biobert_tokenizer = AutoTokenizer.from_pretrained("dmis-lab/biobert-base-cased-v1.1")
-        self.keyword_extractor = KeyBERT(model=biobert_model)
+        pubmedbert_model = AutoModel.from_pretrained("microsoft/BiomedNLP-PubMedBERT-base-uncased-abstract")
+        pubmedbert_tokenizer = AutoTokenizer.from_pretrained("microsoft/BiomedNLP-PubMedBERT-base-uncased-abstract")
+        self.keyword_extractor = KeyBERT(model=pubmedbert_model)
+
         self.root = root
         self.root.title("Prime Time Medical Research Opportunities")
         self.root.geometry("1350x750")
@@ -259,9 +260,9 @@ class PrimeTimeApp:
 
         for kw in keyword_list:
             expanded = expand_with_mesh(kw)
-        if expanded:
-            group = "(" + " OR ".join(expanded) + ")"
-            query_groups.append(group)
+            if expanded:
+                group = "(" + " OR ".join(expanded) + ")"
+                query_groups.append(group)
 
         query = " AND ".join(query_groups)
 
@@ -322,28 +323,36 @@ class PrimeTimeApp:
             return
 
         try:
+            # Extract keywords using MMR (diverse and relevant)
             raw_keywords = self.keyword_extractor.extract_keywords(
                 idea,
                 keyphrase_ngram_range=(1, 4),
                 stop_words='english',
-                use_maxsum=True,
-                nr_candidates=20,
-                top_n=10
+                use_mmr=True,
+                diversity=0.5,
+                nr_candidates=30,
+                top_n=15
             )
 
-            phrases = [kw[0] for kw in raw_keywords]
-            final_keywords = []
+            # Filter: keep those with score ≥ 0.4
+            raw_keywords = [(phrase, score) for phrase, score in raw_keywords if score >= 0.5]
 
+            # Step 1: just the phrases
+            phrases = [kw[0] for kw in raw_keywords]
+
+            # Step 2: remove short phrases that are substrings of longer ones
+            final_keywords = []
             for phrase in phrases:
-                # Only keep it if it's not a unigram contained in a longer phrase
-                if len(phrase.split()) == 1:
-                    if not any(phrase in longer for longer in phrases if len(longer.split()) > 1):
-                        final_keywords.append(phrase)
-                else:
+                if not any(
+                    phrase != other and phrase in other
+                    for other in phrases
+                ):
                     final_keywords.append(phrase)
 
+            # Display results
             self.keywords_text.delete("1.0", tk.END)
             self.keywords_text.insert(tk.END, "; ".join(final_keywords))
+
         except Exception as e:
             messagebox.showerror("Error", f"Keyword extraction failed: {e}")
     
@@ -434,6 +443,7 @@ def main():
     root = tk.Tk()
     app = PrimeTimeApp(root)
     root.mainloop()
+
 
 if __name__ == "__main__":
     try:
