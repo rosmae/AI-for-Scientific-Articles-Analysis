@@ -346,13 +346,6 @@ class PrimeTimeApp:
             self.keywords_text.insert(tk.END, "; ".join(final_keywords))
         except Exception as e:
             messagebox.showerror("Error", f"Keyword extraction failed: {e}")
-
-    def analyze_subfield(self):
-        """Analyze a specific medical subfield"""
-        subfield = self.subfield_var.get().strip()
-        if not subfield:
-            messagebox.showwarning("Warning", "Please select or enter a subfield.")
-            return
     
     def refresh_articles(self):
         """Refresh articles displayed in the treeview"""
