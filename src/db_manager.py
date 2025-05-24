@@ -153,7 +153,7 @@ class DatabaseManager:
                     LEFT JOIN authors au ON aa.authord_id = au.id
                     LEFT JOIN citations c ON a.id = c.article_id
                     GROUP BY a.id, c.count
-                    ORDER BY a.pub_date DESC
+                    ORDER BY a.id DESC
                 """)
                 return cur.fetchall()
         except (Exception, psycopg2.DatabaseError) as error:
