@@ -3,6 +3,7 @@ from psycopg2 import sql
 from psycopg2.extras import RealDictCursor
 import os
 import sys
+import subprocess
 from datetime import datetime
 from dotenv import load_dotenv
 load_dotenv()
@@ -210,3 +211,23 @@ class DatabaseManager:
             return datetime.now().date()
         except Exception:
             return datetime.now().date()
+
+    def export_database(self, output_path):
+        """Export the entire PostgreSQL database to a .sql file"""
+        try:
+            dump_command = [
+                "pg_dump",
+                "-h", self.connection_params["host"],
+                "-p", self.connection_params["port"],
+                "-U", self.connection_params["user"],
+                "-d", self.connection_params["dbname"],
+                "-f", output_path
+            ]
+            env = os.environ.copy()
+            env["PGPASSWORD"] = self.connection_params["password"]
+            subprocess.run(dump_command, check=True, env=env)
+            return True
+        except Exception as e:
+            print(f"❌ Error exporting database: {e}")
+            return False
+
