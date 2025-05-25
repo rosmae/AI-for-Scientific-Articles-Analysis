@@ -3,7 +3,7 @@ from psycopg2 import sql
 from psycopg2.extras import RealDictCursor
 import os
 import sys
-import subprocess
+import csv
 from datetime import datetime
 from dotenv import load_dotenv
 load_dotenv()
@@ -212,22 +212,29 @@ class DatabaseManager:
         except Exception:
             return datetime.now().date()
 
-    def export_database(self, output_path):
-        """Export the entire PostgreSQL database to a .sql file"""
+    def export_to_csv(self, output_path):
+        """Export all articles in the database to a CSV file"""
         try:
-            dump_command = [
-                "pg_dump",
-                "-h", self.connection_params["host"],
-                "-p", self.connection_params["port"],
-                "-U", self.connection_params["user"],
-                "-d", self.connection_params["dbname"],
-                "-f", output_path
-            ]
-            env = os.environ.copy()
-            env["PGPASSWORD"] = self.connection_params["password"]
-            subprocess.run(dump_command, check=True, env=env)
+            articles = self.get_all_articles()
+            if not articles:
+                return False
+
+            with open(output_path, mode="w", newline='', encoding="utf-8") as file:
+                writer = csv.writer(file)
+                # Write header
+                writer.writerow(["PMID", "Title", "Journal", "Publication Date", "Authors", "Citation Count"])
+                # Write rows
+                for article in articles:
+                    writer.writerow([
+                        article["pmid"],
+                        article["title"],
+                        article["journal"],
+                        article["pub_date"].strftime("%Y-%m-%d") if article["pub_date"] else "",
+                        ", ".join(article["authors"]) if article["authors"] else "",
+                        article["citation_count"]
+                    ])
             return True
         except Exception as e:
-            print(f"❌ Error exporting database: {e}")
+            print(f"❌ Error exporting to CSV: {e}")
             return False
 

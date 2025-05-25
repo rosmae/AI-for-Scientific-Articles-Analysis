@@ -178,9 +178,9 @@ class PrimeTimeApp:
         refresh_frame = ttk.Frame(self.results_frame)
         refresh_frame.pack(fill=tk.X, pady=5)
 
-        # Right-aligned buttons: Snapshot DB | Refresh Articles
-        self.snapshot_btn = ttk.Button(refresh_frame, text="Snapshot DB", command=self.export_db_snapshot)
-        self.snapshot_btn.pack(side=tk.RIGHT, padx=5)
+        # Export CSV button
+        self.export_btn = ttk.Button(refresh_frame, text="Export CSV", command=self.export_to_csv)
+        self.export_btn.pack(side=tk.RIGHT, padx=5)
 
         self.refresh_btn = ttk.Button(refresh_frame, text="Refresh Articles", command=self.refresh_articles)
         self.refresh_btn.pack(side=tk.RIGHT, padx=5)
@@ -348,23 +348,23 @@ class PrimeTimeApp:
         except Exception as e:
             messagebox.showerror("Error", f"Keyword extraction failed: {e}")
 
-    def export_db_snapshot(self):
+    def export_to_csv(self):
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        default_name = f"prime_time_snapshot_{timestamp}.sql"
+        default_name = f"prime_time_export_{timestamp}.csv"
         file_path = filedialog.asksaveasfilename(
-            defaultextension=".sql",
-            filetypes=[("SQL Files", "*.sql")],
+            defaultextension=".csv",
+            filetypes=[("CSV Files", "*.csv")],
             initialfile=default_name,
-            title="Save Database Snapshot As"
+            title="Export Articles to CSV"
         )
         if not file_path:
             return  # User cancelled
 
-        success = self.db.export_database(file_path)
+        success = self.db.export_to_csv(file_path)
         if success:
-            messagebox.showinfo("Snapshot Saved", f"Database snapshot saved to:\n{file_path}")
+            messagebox.showinfo("Export Complete", f"Articles exported to:\n{file_path}")
         else:
-            messagebox.showerror("Error", "Failed to export the database.")
+            messagebox.showerror("Error", "Failed to export articles to CSV.")
     
     def refresh_articles(self):
         """Refresh articles displayed in the treeview"""
