@@ -1,0 +1,12 @@
+# Ignore documentation and formatting files
+*.html linguist-vendored
+*.tex linguist-vendored
+*.bib linguist-vendored
+
+# If you have docs in folders
+docs/** linguist-vendored
+static/** linguist-vendored
+templates/** linguist-vendored
+
+# Explicitly mark .py as Python if needed
+*.py linguist-language=Python
