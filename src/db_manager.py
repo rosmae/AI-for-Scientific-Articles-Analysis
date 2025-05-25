@@ -72,7 +72,7 @@ class DatabaseManager:
             print(f"Error checking article existence: {error}")
             return False
     
-    def insert_article(self, article_data):
+    def insert_article(self, article_data, article_vector=None, keyword_vector=None):
         """Insert a new article and related data"""
         if not self.connected and not self.connect():
             return False
@@ -130,7 +130,18 @@ class DatabaseManager:
                 """,
                 (article_id, "crossref", citation_count, datetime.now().date())
                 )
-                
+
+                # Insert semantics_vector
+                if article_vector is not None and keyword_vector is not None:
+                    cur.execute(
+                        """
+                        INSERT INTO semantic_vectors (article_id, article_vector, keyword_vector)
+                        VALUES (%s, %s, %s)
+                        """,
+                        (article_id, article_vector.tolist(), keyword_vector.tolist())
+                    )
+
+
             self.conn.commit()
             return article_id
         except (Exception, psycopg2.DatabaseError) as error:
@@ -213,17 +224,41 @@ class DatabaseManager:
             return datetime.now().date()
 
     def export_to_csv(self, output_path):
-        """Export all articles in the database to a CSV file"""
+        """Export all articles with semantic vectors to a CSV file"""
+        if not self.connected and not self.connect():
+            return False
+
         try:
-            articles = self.get_all_articles()
+            with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute("""
+                    SELECT 
+                        a.pmid,
+                        a.title,
+                        a.journal,
+                        a.pub_date,
+                        array_agg(au.full_name) as authors,
+                        c.count as citation_count,
+                        sv.article_vector,
+                        sv.keyword_vector
+                    FROM articles a
+                    LEFT JOIN articles_authors aa ON a.id = aa.article_id
+                    LEFT JOIN authors au ON aa.authord_id = au.id
+                    LEFT JOIN citations c ON a.id = c.article_id
+                    LEFT JOIN semantic_vectors sv ON a.id = sv.article_id
+                    GROUP BY a.id, c.count, sv.article_vector, sv.keyword_vector
+                    ORDER BY a.id DESC
+                """)
+                articles = cur.fetchall()
+
             if not articles:
                 return False
 
             with open(output_path, mode="w", newline='', encoding="utf-8") as file:
                 writer = csv.writer(file)
-                # Write header
-                writer.writerow(["PMID", "Title", "Journal", "Publication Date", "Authors", "Citation Count"])
-                # Write rows
+                writer.writerow([
+                    "PMID", "Title", "Journal", "Publication Date", "Authors",
+                    "Citation Count", "Article Vector", "Keyword Vector"
+                ])
                 for article in articles:
                     writer.writerow([
                         article["pmid"],
@@ -231,10 +266,11 @@ class DatabaseManager:
                         article["journal"],
                         article["pub_date"].strftime("%Y-%m-%d") if article["pub_date"] else "",
                         ", ".join(article["authors"]) if article["authors"] else "",
-                        article["citation_count"]
+                        article["citation_count"],
+                        str(article["article_vector"]) if article["article_vector"] else "",
+                        str(article["keyword_vector"]) if article["keyword_vector"] else ""
                     ])
             return True
         except Exception as e:
             print(f"❌ Error exporting to CSV: {e}")
             return False
-

@@ -4,6 +4,8 @@ import os
 import threading
 from datetime import datetime
 import tkinter as tk
+import torch
+import numpy as np
 from tkinter import ttk, messagebox, scrolledtext, filedialog
 from pathlib import Path
 from dotenv import load_dotenv
@@ -32,6 +34,8 @@ class PrimeTimeApp:
         pubmedbert_model = AutoModel.from_pretrained("microsoft/BiomedNLP-PubMedBERT-base-uncased-abstract")
         pubmedbert_tokenizer = AutoTokenizer.from_pretrained("microsoft/BiomedNLP-PubMedBERT-base-uncased-abstract")
         self.keyword_extractor = KeyBERT(model=pubmedbert_model)
+        self.bert_model = pubmedbert_model
+        self.bert_tokenizer = pubmedbert_tokenizer
 
         self.root = root
         self.root.title("Prime Time Medical Research Opportunities")
@@ -144,8 +148,8 @@ class PrimeTimeApp:
         ttk.Entry(date_frame, textvariable=self.end_date_var, width=12).pack(side=tk.LEFT)
 
         ttk.Label(date_frame, text="Max Results:").pack(side=tk.LEFT, padx=10)
-        self.max_results_var = tk.StringVar(value="1000")
-        ttk.Spinbox(date_frame, from_=1, to=50, textvariable=self.max_results_var, width=5).pack(side=tk.LEFT)
+        self.max_results_var = tk.StringVar(value="100")
+        ttk.Spinbox(date_frame, from_=1, to=1000, textvariable=self.max_results_var, width=5).pack(side=tk.LEFT)
 
     def create_results_widgets(self):
         # Create a frame for the table
@@ -303,9 +307,17 @@ class PrimeTimeApp:
                 count = 0
                 for article in articles:
                     if not self.db.article_exists(article["PMID"]):
-                        article_id = self.db.insert_article(article)
-                        if article_id:
-                            count += 1
+                        # Compute semantic vector for article (title + abstract)
+                        text_to_embed = (article["Title"] or "") + " " + (article["Abstract"] or "")
+                        article_vector = self.compute_embedding(text_to_embed)
+
+                        # Compute semantic vector for the current search keywords
+                        keywords_text = " ".join(keyword_list)
+                        keyword_vector = self.compute_embedding(keywords_text)
+
+                        # Insert article and semantic vectors together
+                        self.db.insert_article(article, article_vector, keyword_vector)
+                        count += 1
                 
                 # Update UI
                 self.root.after(0, lambda: self.status_var.set(f"Added {count} new articles to database"))
@@ -447,6 +459,19 @@ class PrimeTimeApp:
             messagebox.showwarning("Warning", "Please select an article first.")
         except Exception as e:
             messagebox.showerror("Error", f"An error occurred: {e}")
+
+    def compute_embedding(self, text: str) -> np.ndarray:
+        self.bert_model.eval()
+        with torch.no_grad():
+            tokens = self.bert_tokenizer(
+                text,
+                return_tensors="pt",
+                truncation=True,
+                padding=True,
+                max_length=512
+            )
+            emb = self.bert_model(**tokens).last_hidden_state.mean(dim=1).squeeze()
+        return emb.numpy()
 
 def main():
     """Main application function"""
