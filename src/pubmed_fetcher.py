@@ -13,7 +13,7 @@ def search_pubmed(query, max_results=10, start_date=None, end_date=None):
         if start_date and end_date:
             query += f' AND ("{start_date}"[PDAT] : "{end_date}"[PDAT])'
         
-        handle = Entrez.esearch(db="pubmed", term=query, retmax=max_results)
+        handle = Entrez.esearch(db="pubmed", term=query, retmax=max_results, sort="relevance")
         record = Entrez.read(handle)
         handle.close()
         return record["IdList"]

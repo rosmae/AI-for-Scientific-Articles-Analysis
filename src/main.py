@@ -144,7 +144,7 @@ class PrimeTimeApp:
         ttk.Entry(date_frame, textvariable=self.end_date_var, width=12).pack(side=tk.LEFT)
 
         ttk.Label(date_frame, text="Max Results:").pack(side=tk.LEFT, padx=10)
-        self.max_results_var = tk.StringVar(value="10")
+        self.max_results_var = tk.StringVar(value="500")
         ttk.Spinbox(date_frame, from_=1, to=50, textvariable=self.max_results_var, width=5).pack(side=tk.LEFT)
 
     def create_results_widgets(self):
@@ -329,9 +329,9 @@ class PrimeTimeApp:
                 keyphrase_ngram_range=(1, 4),
                 stop_words='english',
                 use_mmr=True,
-                diversity=0.5,
-                nr_candidates=30,
-                top_n=15
+                diversity=0.8,
+                nr_candidates=94,
+                top_n=7
             )
 
             # Filter: keep those with score ≥ 0.4
