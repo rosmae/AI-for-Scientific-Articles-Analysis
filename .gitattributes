@@ -1,7 +1,17 @@
+# Force .py to count as Python code
 *.py linguist-language=Python
-*.sql linguist-language=SQL
-*.html linguist-documentation
+
+# Ignore LaTeX and TeX support files
+*.tex linguist-documentation
+*.aux linguist-generated
+*.log linguist-generated
+*.out linguist-generated
+*.toc linguist-generated
+*.synctex.gz linguist-generated
+
+# Ignore other documentation or metadata
 *.md linguist-documentation
 *.txt linguist-documentation
+*.html linguist-documentation
 *.json linguist-generated
 *.ico linguist-generated
