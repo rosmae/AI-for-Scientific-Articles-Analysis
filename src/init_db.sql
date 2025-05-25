@@ -46,3 +46,12 @@ CREATE TABLE IF NOT EXISTS affiliations (
     full_address TEXT,
     FOREIGN KEY (author_id) REFERENCES authors(id) ON DELETE CASCADE
 );
+
+-- Semantic Vectors table
+CREATE TABLE IF NOT EXISTS semantic_vectors (
+    article_id INTEGER PRIMARY KEY,
+    article_vector FLOAT8[],
+    keyword_vector FLOAT8[],
+    FOREIGN KEY (article_id) REFERENCES articles(id) ON DELETE CASCADE
+);
+

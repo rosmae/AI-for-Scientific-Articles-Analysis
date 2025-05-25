@@ -144,7 +144,7 @@ class PrimeTimeApp:
         ttk.Entry(date_frame, textvariable=self.end_date_var, width=12).pack(side=tk.LEFT)
 
         ttk.Label(date_frame, text="Max Results:").pack(side=tk.LEFT, padx=10)
-        self.max_results_var = tk.StringVar(value="500")
+        self.max_results_var = tk.StringVar(value="1000")
         ttk.Spinbox(date_frame, from_=1, to=50, textvariable=self.max_results_var, width=5).pack(side=tk.LEFT)
 
     def create_results_widgets(self):
