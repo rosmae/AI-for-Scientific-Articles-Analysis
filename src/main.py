@@ -324,34 +324,22 @@ class PrimeTimeApp:
 
         try:
             # Extract keywords using MMR (diverse and relevant)
-            raw_keywords = self.keyword_extractor.extract_keywords(
+            keywords = self.keyword_extractor.extract_keywords(
                 idea,
                 keyphrase_ngram_range=(1, 4),
                 stop_words='english',
                 use_mmr=True,
-                diversity=0.8,
-                nr_candidates=94,
-                top_n=7
+                diversity=0.7,
+                nr_candidates=100,
+                top_n=10
             )
 
-            # Filter: keep those with score ≥ 0.4
-            raw_keywords = [(phrase, score) for phrase, score in raw_keywords if score >= 0.5]
-
-            # Step 1: just the phrases
-            phrases = [kw[0] for kw in raw_keywords]
-
-            # Step 2: remove short phrases that are substrings of longer ones
-            final_keywords = []
-            for phrase in phrases:
-                if not any(
-                    phrase != other and phrase in other
-                    for other in phrases
-                ):
-                    final_keywords.append(phrase)
+            # Filter: keep those with score ≥ threshold
+            keywords = [(phrase, score) for phrase, score in keywords if score >= 0.5]
 
             # Display results
             self.keywords_text.delete("1.0", tk.END)
-            self.keywords_text.insert(tk.END, "; ".join(final_keywords))
+            self.keywords_text.insert(tk.END, "; ".join([kw[0] for kw in keywords]))
 
         except Exception as e:
             messagebox.showerror("Error", f"Keyword extraction failed: {e}")
