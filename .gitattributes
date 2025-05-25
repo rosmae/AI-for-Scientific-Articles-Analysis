@@ -1,13 +1,7 @@
-
-*.tex linguist-vendored
-*.bib linguist-vendored
-*.cls linguist-vendored
-*.sty linguist-vendored
-
-
-paper/** linguist-vendored
-report/** linguist-vendored
-thesis/** linguist-vendored
-
-
 *.py linguist-language=Python
+*.sql linguist-language=SQL
+*.html linguist-documentation
+*.md linguist-documentation
+*.txt linguist-documentation
+*.json linguist-generated
+*.ico linguist-generated
