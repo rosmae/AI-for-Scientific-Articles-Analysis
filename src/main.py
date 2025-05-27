@@ -15,6 +15,7 @@ from mesh_expander import expand_with_mesh
 from opportunity_score import compute_novelty_score, compute_citation_rate_score, compute_recency_score, compute_opportunity_score
 from transformers import AutoModel, AutoTokenizer
 from keybert import KeyBERT
+from sklearn.metrics.pairwise import cosine_similarity
 
 # Load environment variables and connect to the database
 ENV_PATH = Path(__file__).parent.parent / ".env"
@@ -195,26 +196,31 @@ class PrimeTimeApp:
     def create_opportunity_widgets(self):
         metrics_frame = ttk.Frame(self.opportunity_frame)
         metrics_frame.pack(fill=tk.X, pady=5)
-        
-        # Metrics display
-        self.publication_count_var = tk.StringVar(value="Novelty: 0")
+
+        # Metrics display variables
+        self.novelty_val = 0.0
+        self.citation_val = 0.0
+        self.recency_val = 0.0
+        self.overall_val = 0.0
+
+        self.publication_count_var = tk.StringVar(value="Novelty: 0.0")
         ttk.Label(metrics_frame, textvariable=self.publication_count_var).pack(side=tk.LEFT, padx=20)
-        
-        self.total_citations_var = tk.StringVar(value="Citation Rate: 0")
+
+        self.total_citations_var = tk.StringVar(value="Citation Rate: 0.0")
         ttk.Label(metrics_frame, textvariable=self.total_citations_var).pack(side=tk.LEFT, padx=20)
-        
-        self.avg_citations_var = tk.StringVar(value="Recency: 0")
+
+        self.avg_citations_var = tk.StringVar(value="Recency: 0.0")
         ttk.Label(metrics_frame, textvariable=self.avg_citations_var).pack(side=tk.LEFT, padx=20)
-        
+
         score_frame = ttk.Frame(self.opportunity_frame)
         score_frame.pack(fill=tk.X, pady=5)
-        
+
         ttk.Label(score_frame, text="Opportunity Score:", font=("Arial", 12, "bold")).pack(side=tk.LEFT, padx=20)
-        
+
         self.score_var = tk.StringVar(value="0.0")
         ttk.Label(score_frame, textvariable=self.score_var, font=("Arial", 14, "bold")).pack(side=tk.LEFT, padx=5)
-        
-        self.recommendation_var = tk.StringVar(value="Available once at least 3 topics are searched")
+
+        self.recommendation_var = tk.StringVar(value="No data available")
         ttk.Label(score_frame, textvariable=self.recommendation_var, font=("Arial", 12)).pack(side=tk.RIGHT, padx=20)
     
     def initialize_app(self):
@@ -293,13 +299,15 @@ class PrimeTimeApp:
                 end_date = self.end_date_var.get().strip() or None
 
                 pmids = search_pubmed(query, max_results, start_date=start_date, end_date=end_date)
-                if not pmids:
-                    self.root.after(0, lambda: messagebox.showinfo("Search Results", "No results found."))
+                count_found = len(pmids) if pmids else 0
+                
+                self.root.after(0, lambda: messagebox.showinfo("Search Results", f"Found {count_found} articles."))
+                if count_found == 0:
                     self.root.after(0, lambda: self.status_var.set("No results found"))
                     self.root.after(0, lambda: self.search_btn.config(state=tk.NORMAL))
                     return
 
-                self.status_var.set(f"Found {len(pmids)} articles. Fetching details...")
+                self.status_var.set(f"Found {count_found} articles. Fetching details...")
 
                 idea_text = self.idea_text.get("1.0", tk.END).strip()
                 keyword_text = raw_keywords.strip()
@@ -319,9 +327,14 @@ class PrimeTimeApp:
                             self.db.link_article_to_search(article_id, search_id)
                             count += 1
 
-                self.root.after(0, lambda: self.status_var.set(f"Added {count} new articles to database"))
                 self.root.after(0, lambda: self.refresh_articles())
-                self.root.after(0, lambda: messagebox.showinfo("Search Results", f"Added {count} new articles to database"))
+                self.root.after(0, lambda: self.status_var.set(f"Added {count} new articles to database"))
+                
+                def score_task():
+                    self.compute_and_display_opportunity_scores(search_id)
+
+                threading.Thread(target=score_task, daemon=True).start()
+
             except Exception as e:
                 self.root.after(0, lambda: messagebox.showerror("Error", f"An error occurred: {e}"))
                 self.root.after(0, lambda: self.status_var.set("Search error"))
@@ -404,6 +417,65 @@ class PrimeTimeApp:
         except Exception as e:
             messagebox.showerror("Error", f"An error occurred: {e}")
             self.status_var.set("Error refreshing articles")
+    
+    def compute_and_display_opportunity_scores(self, search_id):
+        try:
+            # Fetch article metadata for this search
+            articles = self.db.get_articles_by_search(search_id)
+            valid_articles = [a for a in articles if a.get("citation_count") is not None and a.get("citation_count") >= 0]
+            if len(valid_articles) == 0:
+                return
+
+            # Compute embeddings
+            idea = self.idea_text.get("1.0", tk.END).strip()
+            idea_vec = self.compute_embedding(idea)
+            article_vecs = [self.compute_embedding(a["title"] + " " + (a["abstract"] or "")) for a in valid_articles]
+
+            similarities = cosine_similarity([idea_vec], article_vecs)[0]
+            avg_sim = float(np.mean(similarities))
+
+            # Build raw scores from history
+            history = self.db.get_all_search_history()  # You’ll implement this in db_manager
+            novelty_raws = []
+            citation_raws = []
+            recency_raws = []
+
+            for h in history:
+                if h["search_id"] == search_id:
+                    continue
+                novelty_raws.append(h["novelty_raw"])
+                citation_raws.append(h["citation_raw"])
+                recency_raws.append(h["recency_raw"])
+
+            num_articles = len(valid_articles)
+            pub_dates = [a["pub_date"] for a in valid_articles]
+            citation_counts = [a["citation_count"] for a in valid_articles]
+
+            from opportunity_score import (
+                compute_novelty_score,
+                compute_citation_rate_score,
+                compute_recency_score,
+                compute_opportunity_score
+            )
+
+            novelty = compute_novelty_score(avg_sim, num_articles, novelty_raws)
+            citation = compute_citation_rate_score(citation_counts, pub_dates, citation_raws)
+            recency = compute_recency_score(pub_dates, recency_raws)
+            score = compute_opportunity_score(novelty, citation, recency)
+
+            self.db.insert_opportunity_score(search_id, novelty, citation, recency, score)
+
+            # Update UI
+            self.root.after(0, lambda: self.publication_count_var.set(f"Novelty: {novelty:.3f}"))
+            self.root.after(0, lambda: self.total_citations_var.set(f"Citation Rate: {citation:.3f}"))
+            self.root.after(0, lambda: self.avg_citations_var.set(f"Recency: {recency:.3f}"))
+            self.root.after(0, lambda: self.score_var.set(f"{score:.3f}"))
+            self.root.after(0, lambda: self.recommendation_var.set("Score based on current search only"))
+
+        except Exception as e:
+            print(f"Error computing opportunity score: {e}")
+
+    
     
     def show_article_details(self, event):
         """Show detailed information about a selected article"""

@@ -3,10 +3,11 @@ from datetime import datetime
 
 # --- Normalization utility ---
 def normalize_score(value, all_values):
-    min_val = min(all_values)
-    max_val = max(all_values)
-    if max_val == min_val:
-        return 0.5
+    all_vals = list(all_values) + [value]  
+    min_val  = min(all_vals)
+    max_val  = max(all_vals)
+    if max_val == min_val:                  
+        return 1.0                          
     return (value - min_val) / (max_val - min_val)
 
 # --- Novelty Score ---

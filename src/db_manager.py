@@ -215,6 +215,70 @@ class DatabaseManager:
             self.conn.rollback()
             return False   
 
+    def get_latest_search_id(self):
+        if not self.connected and not self.connect():
+            return None
+        try:
+            with self.conn.cursor() as cur:
+                cur.execute("SELECT search_id FROM searches ORDER BY search_id DESC LIMIT 1")
+                row = cur.fetchone()
+                return row[0] if row else None
+        except Exception as error:
+            print(f"Error retrieving latest search_id: {error}")
+            return None
+
+    def get_total_search_count(self):
+        if not self.connected and not self.connect():
+            return 0
+        try:
+            with self.conn.cursor() as cur:
+                cur.execute("SELECT COUNT(*) FROM searches")
+                return cur.fetchone()[0]
+        except Exception as error:
+            print(f"Error getting search count: {error}")
+            return 0
+
+    def get_articles_by_search(self, search_id):
+        if not self.connected and not self.connect():
+            return []
+        try:
+            with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute("""
+                    SELECT a.title, a.abstract, a.pub_date, c.count AS citation_count
+                    FROM search_articles sa
+                    JOIN articles a ON sa.article_id = a.id
+                    LEFT JOIN citations c ON a.id = c.article_id
+                    WHERE sa.search_id = %s
+                """, (search_id,))
+                return cur.fetchall()
+        except Exception as error:
+            print(f"Error retrieving articles by search: {error}")
+            return []
+
+        # ---- NEW helper used by the UI scoring function ----
+    def get_all_search_history(self):
+        """
+        Returns a list of dicts with keys that
+        compute_and_display_opportunity_scores() expects.
+        """
+        if not self.connected and not self.connect():
+            return []
+
+        try:
+            with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute("""
+                    SELECT search_id,
+                           novelty_score  AS novelty_raw,
+                           citation_rate_score AS citation_raw,
+                           recency_score AS recency_raw
+                    FROM opportunity_scores
+                    WHERE novelty_score IS NOT NULL
+                """)
+                return cur.fetchall()
+        except Exception as error:
+            print(f"Error retrieving search history: {error}")
+            return []
+    
     def close(self):
         if self.conn:
             self.conn.close()
@@ -222,12 +286,7 @@ class DatabaseManager:
 
     def _parse_date(self, date_str):
         try:
-            formats = [
-                "%Y %b %d",
-                "%Y %b",
-                "%Y",
-                "%Y-%m-%d"
-            ]
+            formats = ["%Y %b %d", "%Y %b", "%Y", "%Y-%m-%d"]
             for fmt in formats:
                 try:
                     return datetime.strptime(date_str, fmt).date()
