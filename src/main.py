@@ -12,6 +12,7 @@ from dotenv import load_dotenv
 from db_manager import DatabaseManager
 from pubmed_fetcher import search_pubmed, fetch_summaries
 from mesh_expander import expand_with_mesh
+from opportunity_score import compute_novelty_score, compute_citation_rate_score, compute_recency_score, compute_opportunity_score
 from transformers import AutoModel, AutoTokenizer
 from keybert import KeyBERT
 
@@ -196,13 +197,13 @@ class PrimeTimeApp:
         metrics_frame.pack(fill=tk.X, pady=5)
         
         # Metrics display
-        self.publication_count_var = tk.StringVar(value="Publications: 0")
+        self.publication_count_var = tk.StringVar(value="Novelty: 0")
         ttk.Label(metrics_frame, textvariable=self.publication_count_var).pack(side=tk.LEFT, padx=20)
         
-        self.total_citations_var = tk.StringVar(value="Total Citations: 0")
+        self.total_citations_var = tk.StringVar(value="Citation Rate: 0")
         ttk.Label(metrics_frame, textvariable=self.total_citations_var).pack(side=tk.LEFT, padx=20)
         
-        self.avg_citations_var = tk.StringVar(value="Avg Citations: 0")
+        self.avg_citations_var = tk.StringVar(value="Recency: 0")
         ttk.Label(metrics_frame, textvariable=self.avg_citations_var).pack(side=tk.LEFT, padx=20)
         
         score_frame = ttk.Frame(self.opportunity_frame)
@@ -213,7 +214,7 @@ class PrimeTimeApp:
         self.score_var = tk.StringVar(value="0.0")
         ttk.Label(score_frame, textvariable=self.score_var, font=("Arial", 14, "bold")).pack(side=tk.LEFT, padx=5)
         
-        self.recommendation_var = tk.StringVar(value="No data available")
+        self.recommendation_var = tk.StringVar(value="Available once at least 3 topics are searched")
         ttk.Label(score_frame, textvariable=self.recommendation_var, font=("Arial", 12)).pack(side=tk.RIGHT, padx=20)
     
     def initialize_app(self):

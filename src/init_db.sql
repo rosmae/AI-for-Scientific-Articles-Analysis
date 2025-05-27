@@ -62,3 +62,13 @@ CREATE TABLE IF NOT EXISTS search_articles (
     article_id INTEGER REFERENCES articles(id) ON DELETE CASCADE,
     PRIMARY KEY (search_id, article_id)
 );
+
+-- Create the opportunity score and subscores table
+CREATE TABLE opportunity_scores (
+    search_id INTEGER PRIMARY KEY REFERENCES searches(search_id) ON DELETE CASCADE,
+    novelty_score REAL,
+    citation_rate_score REAL,
+    recency_score REAL,
+    overall_score REAL,
+    computed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

@@ -192,6 +192,29 @@ class DatabaseManager:
             print(f"Error retrieving article: {error}")
             return None
 
+    def insert_opportunity_score(self, search_id, novelty_score, citation_rate_score, recency_score, overall_score):
+        if not self.connected and not self.connect():
+            return False
+        try:
+            with self.conn.cursor() as cur:
+                cur.execute("""
+                    INSERT INTO opportunity_scores (
+                        search_id, novelty_score, citation_rate_score, recency_score, overall_score
+                    ) VALUES (%s, %s, %s, %s, %s)
+                    ON CONFLICT (search_id) DO UPDATE SET
+                        novelty_score = EXCLUDED.novelty_score,
+                        citation_rate_score = EXCLUDED.citation_rate_score,
+                        recency_score = EXCLUDED.recency_score,
+                        overall_score = EXCLUDED.overall_score,
+                        computed_at = CURRENT_TIMESTAMP
+                """, (search_id, novelty_score, citation_rate_score, recency_score, overall_score))
+            self.conn.commit()
+            return True
+        except Exception as error:
+            print(f"Error inserting opportunity score: {error}")
+            self.conn.rollback()
+            return False   
+
     def close(self):
         if self.conn:
             self.conn.close()
