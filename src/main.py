@@ -138,7 +138,7 @@ class PrimeTimeApp:
         self.results_frame = ttk.LabelFrame(self.left_right_frame, text="Articles in Database", padding="10")
         self.results_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-        date_frame = ttk.Frame(self.search_frame)
+        date_frame = ttk.Frame(self.search_frame) 
         date_frame.pack(fill=tk.X, pady=5)
 
         ttk.Label(date_frame, text="Start Date (YYYY-MM-DD):").pack(side=tk.LEFT, padx=5)
@@ -150,7 +150,7 @@ class PrimeTimeApp:
         ttk.Entry(date_frame, textvariable=self.end_date_var, width=12).pack(side=tk.LEFT)
 
         ttk.Label(date_frame, text="Max Results:").pack(side=tk.LEFT, padx=10)
-        self.max_results_var = tk.StringVar(value="100")
+        self.max_results_var = tk.StringVar(value="10")
         ttk.Spinbox(date_frame, from_=1, to=1000, textvariable=self.max_results_var, width=5).pack(side=tk.LEFT)
 
     def create_results_widgets(self):

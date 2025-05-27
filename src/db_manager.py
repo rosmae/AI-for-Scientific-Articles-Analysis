@@ -313,14 +313,19 @@ class DatabaseManager:
                         s.idea_text,
                         s.keyword_text,
                         s.max_results,
-                        s.timestamp
+                        s.timestamp,
+                        o.novelty_score,
+                        o.citation_rate_score,
+                        o.recency_score,
+                        o.overall_score
                     FROM articles a
                     LEFT JOIN articles_authors aa ON a.id = aa.article_id
                     LEFT JOIN authors au ON aa.authord_id = au.id
                     LEFT JOIN citations c ON a.id = c.article_id
                     LEFT JOIN search_articles sa ON a.id = sa.article_id
                     LEFT JOIN searches s ON sa.search_id = s.search_id
-                    GROUP BY a.id, c.count, s.idea_text, s.keyword_text, s.max_results, s.timestamp
+                    LEFT JOIN opportunity_scores o ON s.search_id = o.search_id
+                    GROUP BY a.id, c.count, s.idea_text, s.keyword_text, s.max_results, s.timestamp, o.novelty_score, o.citation_rate_score, o.recency_score, o.overall_score
                     ORDER BY a.id DESC
                 """)
                 articles = cur.fetchall()
@@ -332,7 +337,8 @@ class DatabaseManager:
                 writer = csv.writer(file)
                 writer.writerow([
                     "PMID", "Title", "Abstract", "Journal", "Publication Date", "Authors",
-                    "Citation Count", "Idea", "Keywords", "Max Results", "Search Timestamp"
+                    "Citation Count", "Idea", "Keywords", "Max Results", "Search Timestamp",
+                    "Novelty Score", "Citation Rate Score", "Recency Score", "Opportunity Score"
                 ])
 
                 for article in articles:
@@ -342,12 +348,16 @@ class DatabaseManager:
                         article["abstract"] or "",
                         article["journal"],
                         article["pub_date"].strftime("%Y-%m-%d") if article["pub_date"] else "",
-                        ", ".join(article["authors"]) if article["authors"] else "",
+                        ", ".join([a for a in article["authors"] if a]) if article["authors"] else "",
                         article["citation_count"],
                         article["idea_text"] or "",
                         article["keyword_text"] or "",
                         article["max_results"] or "",
-                        article["timestamp"].strftime("%Y-%m-%d %H:%M:%S") if article["timestamp"] else ""
+                        article["timestamp"].strftime("%Y-%m-%d %H:%M:%S") if article["timestamp"] else "",
+                        article["novelty_score"],
+                        article["citation_rate_score"],
+                        article["recency_score"],
+                        article["overall_score"]
                     ])
             return True
         except Exception as e:
