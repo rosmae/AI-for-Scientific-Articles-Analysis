@@ -39,7 +39,7 @@ def fetch_training_data():
     try:
         conn = psycopg2.connect(**DB_PARAMS)
     except Exception as e:
-        print("❌ Failed to connect to database:", e)
+        print(" Failed to connect to database:", e)
         sys.exit(1)
 
     with conn:
