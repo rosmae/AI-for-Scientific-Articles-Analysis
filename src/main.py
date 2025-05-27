@@ -427,11 +427,11 @@ class PrimeTimeApp:
                 return
 
             # Compute embeddings
-            idea = self.idea_text.get("1.0", tk.END).strip()
-            idea_vec = self.compute_embedding(idea)
+            keywords = self.keywords_text.get("1.0", tk.END).strip()
+            keywords_vec = self.compute_embedding(keywords)
             article_vecs = [self.compute_embedding(a["title"] + " " + (a["abstract"] or "")) for a in valid_articles]
 
-            similarities = cosine_similarity([idea_vec], article_vecs)[0]
+            similarities = cosine_similarity([keywords_vec], article_vecs)[0]
             avg_sim = float(np.mean(similarities))
 
             # Build raw scores from history
