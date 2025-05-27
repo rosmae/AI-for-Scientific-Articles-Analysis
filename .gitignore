@@ -80,3 +80,5 @@ node_modules/
 npm-debug.log
 yarn-debug.log
 yarn-error.log
+src/model/training_data.npz
+src/model/trained_model.joblib
