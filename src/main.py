@@ -277,49 +277,47 @@ class PrimeTimeApp:
         if not query:
             messagebox.showwarning("Warning", "Please enter a search term.")
             return
-        
+
         try:
             max_results = int(self.max_results_var.get())
         except ValueError:
             max_results = 10
-        
+
         def search_task():
             try:
                 self.status_var.set(f"Searching PubMed for '{query}'...")
                 self.search_btn.config(state=tk.DISABLED)
-                
+
                 start_date = self.start_date_var.get().strip() or None
                 end_date = self.end_date_var.get().strip() or None
-                
+
                 pmids = search_pubmed(query, max_results, start_date=start_date, end_date=end_date)
                 if not pmids:
                     self.root.after(0, lambda: messagebox.showinfo("Search Results", "No results found."))
                     self.root.after(0, lambda: self.status_var.set("No results found"))
                     self.root.after(0, lambda: self.search_btn.config(state=tk.NORMAL))
                     return
-                
+
                 self.status_var.set(f"Found {len(pmids)} articles. Fetching details...")
-                
-                # Fetch article details
+
+                idea_text = self.idea_text.get("1.0", tk.END).strip()
+                keyword_text = raw_keywords.strip()
+
+                search_id = self.db.insert_search(idea_text=idea_text, keyword_text=keyword_text, max_results=max_results)
+                if not search_id:
+                    self.root.after(0, lambda: messagebox.showerror("Error", "Failed to insert search metadata."))
+                    return
+
                 articles = fetch_summaries(pmids)
-                
-                # Store articles in database
+
                 count = 0
                 for article in articles:
                     if not self.db.article_exists(article["PMID"]):
-                        # Compute semantic vector for article (title + abstract)
-                        text_to_embed = (article["Title"] or "") + " " + (article["Abstract"] or "")
-                        article_vector = self.compute_embedding(text_to_embed)
+                        article_id = self.db.insert_article(article)
+                        if article_id:
+                            self.db.link_article_to_search(article_id, search_id)
+                            count += 1
 
-                        # Compute semantic vector for the current search keywords
-                        keywords_text = " ".join(keyword_list)
-                        keyword_vector = self.compute_embedding(keywords_text)
-
-                        # Insert article and semantic vectors together
-                        self.db.insert_article(article, article_vector, keyword_vector)
-                        count += 1
-                
-                # Update UI
                 self.root.after(0, lambda: self.status_var.set(f"Added {count} new articles to database"))
                 self.root.after(0, lambda: self.refresh_articles())
                 self.root.after(0, lambda: messagebox.showinfo("Search Results", f"Added {count} new articles to database"))
@@ -328,10 +326,9 @@ class PrimeTimeApp:
                 self.root.after(0, lambda: self.status_var.set("Search error"))
             finally:
                 self.root.after(0, lambda: self.search_btn.config(state=tk.NORMAL))
-        
-        # Run search in a separate thread
+
         threading.Thread(target=search_task, daemon=True).start()
-    
+   
     def generate_keywords(self):
         idea = self.idea_text.get("1.0", tk.END).strip()
         if not idea:

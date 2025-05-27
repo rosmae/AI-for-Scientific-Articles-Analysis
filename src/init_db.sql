@@ -47,11 +47,18 @@ CREATE TABLE IF NOT EXISTS affiliations (
     FOREIGN KEY (author_id) REFERENCES authors(id) ON DELETE CASCADE
 );
 
--- Semantic Vectors table
-CREATE TABLE IF NOT EXISTS semantic_vectors (
-    article_id INTEGER PRIMARY KEY,
-    article_vector FLOAT8[],
-    keyword_vector FLOAT8[],
-    FOREIGN KEY (article_id) REFERENCES articles(id) ON DELETE CASCADE
+-- Create the searches table
+CREATE TABLE IF NOT EXISTS searches (
+    search_id SERIAL PRIMARY KEY,
+    idea_text TEXT,
+    keyword_text TEXT,
+    max_results INTEGER,
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Create the search_articles table (many-to-many mapping)
+CREATE TABLE IF NOT EXISTS search_articles (
+    search_id INTEGER REFERENCES searches(search_id) ON DELETE CASCADE,
+    article_id INTEGER REFERENCES articles(id) ON DELETE CASCADE,
+    PRIMARY KEY (search_id, article_id)
+);
