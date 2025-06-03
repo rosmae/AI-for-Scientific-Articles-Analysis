@@ -207,7 +207,7 @@ class DatabaseManager:
                         recency_score = EXCLUDED.recency_score,
                         overall_score = EXCLUDED.overall_score,
                         computed_at = CURRENT_TIMESTAMP
-                """, (search_id, novelty_score, citation_rate_score, recency_score, overall_score))
+                """, (search_id, novelty_score, float(citation_rate_score), recency_score, overall_score))
             self.conn.commit()
             return True
         except Exception as error:
