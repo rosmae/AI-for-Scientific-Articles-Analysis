@@ -358,11 +358,11 @@ class PrimeTimeApp:
                 use_mmr=True,
                 diversity=0.7,
                 nr_candidates=100,
-                top_n=10
+                top_n=7
             )
 
             # Filter: keep those with score ≥ threshold
-            keywords = [(phrase, score) for phrase, score in keywords if score >= 0.5]
+            keywords = [(phrase, score) for phrase, score in keywords if score >= 0.7]
 
             # Display results
             self.keywords_text.delete("1.0", tk.END)
