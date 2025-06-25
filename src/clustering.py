@@ -6,7 +6,6 @@ import hdbscan
 import umap
 import matplotlib.pyplot as plt
 from dotenv import load_dotenv
-from psycopg2.extras import RealDictCursor
 from statsmodels.tsa.arima.model import ARIMA
 from datetime import datetime
 
@@ -29,7 +28,6 @@ def load_vectors():
         cur.execute("SELECT article_id, vector FROM article_vectors")
         rows = cur.fetchall()
     conn.close()
-
     article_ids = [row[0] for row in rows]
     vectors = np.array([row[1] for row in rows])
     return article_ids, vectors
@@ -88,8 +86,8 @@ def compute_article_velocity(article_id, forecast_horizon=3):
     counts_sorted = [c for _, c in sorted(zip(years, counts))]
 
     try:
-        model = ARIMA(counts_sorted, order=(1,1,0))
-        model_fit = model.fit()
+        model_arima = ARIMA(counts_sorted, order=(1,1,0))
+        model_fit = model_arima.fit()
         forecast = model_fit.forecast(steps=forecast_horizon)
         velocity = np.mean([(f - current_total) / current_total for f in forecast])
         return float(velocity)
@@ -101,18 +99,15 @@ def compute_clusters(article_ids, vectors, labels):
     with conn.cursor() as cur:
         cur.execute("TRUNCATE TABLE clusters")
         cluster_labels = set(label for label in labels if label != -1)
-
         for cluster_label in cluster_labels:
             indices = [i for i, l in enumerate(labels) if l == cluster_label]
             cluster_vectors = vectors[indices]
             centroid = compute_centroid(cluster_vectors)
-
             article_velocities = []
             for i in indices:
                 article_id = article_ids[i]
                 vel = compute_article_velocity(article_id)
                 article_velocities.append(vel)
-
             avg_velocity = np.mean(article_velocities)
             cur.execute("""
                 INSERT INTO clusters (cluster_label, centroid, size, velocity, last_updated)
@@ -127,8 +122,8 @@ def compute_clusters(article_ids, vectors, labels):
     conn.commit()
     conn.close()
 
-def generate_umap_visualization(article_ids, vectors, labels):
-    reducer = umap.UMAP()
+def generate_umap_visualization(article_ids, vectors, labels, keyword_embedding=None):
+    reducer = umap.UMAP(n_neighbors=10, min_dist=0.1, metric='cosine')
     embedding = reducer.fit_transform(vectors)
 
     plt.figure(figsize=(10, 8))
@@ -139,18 +134,11 @@ def generate_umap_visualization(article_ids, vectors, labels):
         cluster_embedding = embedding[indices]
         plt.scatter(cluster_embedding[:,0], cluster_embedding[:,1], label=f"Cluster {label}", s=20)
 
+    if keyword_embedding is not None:
+        keyword_2d = reducer.transform(keyword_embedding.reshape(1, -1))
+        plt.scatter(keyword_2d[0,0], keyword_2d[0,1], color='red', s=150, marker='X', label='User Keyword')
+
     plt.title("UMAP Projection of Clusters")
     plt.legend()
     plt.savefig("cluster_umap.png")
     plt.close()
-
-def main():
-    article_ids, vectors = load_vectors()
-    labels = run_hdbscan(vectors)
-    update_article_labels(article_ids, labels)
-    compute_clusters(article_ids, vectors, labels)
-    generate_umap_visualization(article_ids, vectors, labels)
-    print("Clustering pipeline completed.")
-
-if __name__ == "__main__":
-    main()
