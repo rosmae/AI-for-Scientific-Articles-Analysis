@@ -86,7 +86,7 @@ def compute_article_velocity(article_id, forecast_horizon=3):
 
     years, counts = data
     years_sorted = sorted(years)
-    counts_sorted = [c for _, c in sorted(zip(years, counts))]
+    counts_sorted = np.cumsum([c for _, c in sorted(zip(years, counts))]).tolist()
 
     try:
         model_arima = ARIMA(counts_sorted, order=(1,1,0))
@@ -133,6 +133,8 @@ def generate_umap_visualization(article_ids, vectors, labels, keyword_embedding=
     unique_labels = np.unique(labels)
 
     for label in unique_labels:
+        if label == -1:
+            continue
         indices = [i for i, l in enumerate(labels) if l == label]
         cluster_embedding = embedding[indices]
         plt.scatter(cluster_embedding[:, 0], cluster_embedding[:, 1], label=f"Cluster {label}", s=20)
