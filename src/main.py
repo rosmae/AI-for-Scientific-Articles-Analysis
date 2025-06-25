@@ -325,6 +325,14 @@ class PrimeTimeApp:
                         article_id = self.db.insert_article(article)
                         if article_id:
                             self.db.link_article_to_search(article_id, search_id)
+            
+                            # Compute semantic vector for title + abstract
+                            text = (article["Title"] or "") + " " + (article["Abstract"] or "")
+                            vector = self.compute_embedding(text)
+            
+                            # Insert vector into database
+                            self.db.insert_article_vector(article_id, vector.tolist())
+            
                             count += 1
 
                 self.root.after(0, lambda: self.refresh_articles())

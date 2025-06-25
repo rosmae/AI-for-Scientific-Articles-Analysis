@@ -4,7 +4,6 @@ import requests
 import time
 import re
 
-# Set your email (required by NCBI)
 Entrez.email = "maia.marin94@e-uvt.ro"
 
 def search_pubmed(query, max_results=10, start_date=None, end_date=None):
@@ -45,8 +44,9 @@ def fetch_summaries(id_list):
                         doi = aid.replace(" [doi]", "")
                         break
             
+            pmid_value = record.get("PMID", "")
             summary = {
-                "PMID": record.get("PMID", ""),
+                "PMID": pmid_value,
                 "Title": record.get("TI", ""),
                 "Abstract": record.get("AB", ""),
                 "DOI": doi,
@@ -55,12 +55,16 @@ def fetch_summaries(id_list):
                 "Authors": record.get("FAU", []),
                 "Affiliations": record.get("AD", [])
             }
-            
+
             # Try to get citation count
             if doi:
                 summary["CitationCount"] = get_citation_count(doi)
             else:
                 summary["CitationCount"] = -1 
+
+            # Get citation history from OpenAlex
+            citation_history = get_citation_history_openalex(pmid=pmid_value, doi=doi)
+            summary["CitationHistory"] = citation_history
                 
             results.append(summary)
         
@@ -73,12 +77,9 @@ def fetch_summaries(id_list):
 def get_citation_count(doi):
     """Get citation count for a DOI using CrossRef API"""
     try:
-        # Respect rate limits
         time.sleep(1)
-        
         url = f"https://api.crossref.org/works/{doi}"
         headers = {"User-Agent": "PrimeTimeResearchApp/0.1 (mailto:maia.marin94@e-uvt.ro)"}
-        
         response = requests.get(url, headers=headers)
         if response.status_code == 200:
             data = response.json()
@@ -89,3 +90,34 @@ def get_citation_count(doi):
     except Exception as e:
         print(f"Error getting citation count: {e}")
         return 0
+    
+def get_citation_history_openalex(pmid=None, doi=None):
+    """Fetch yearly citation history from OpenAlex using DOI or PMID."""
+    try:
+        if doi:
+            openalex_id = f"doi:{doi.lower()}"
+        elif pmid:
+            openalex_id = f"pmid:{pmid}"
+        else:
+            print("No DOI or PMID available for OpenAlex lookup.")
+            return {}
+
+        time.sleep(1)
+        url = f"https://api.openalex.org/works/{openalex_id}"
+        headers = {"User-Agent": "PrimeTimeResearchApp/0.1 (mailto:maia.marin94@e-uvt.ro)"}
+        response = requests.get(url, headers=headers)
+
+        if response.status_code == 200:
+            data = response.json()
+            counts_by_year = data.get("counts_by_year", [])
+            history = {entry["year"]: entry["cited_by_count"] for entry in counts_by_year}
+            return history
+        elif response.status_code == 404:
+            print(f"OpenAlex: No record found for {openalex_id}")
+            return {}
+        else:
+            print(f"OpenAlex API error: {response.status_code}")
+            return {}
+    except Exception as e:
+        print(f"Error fetching citation history from OpenAlex: {e}")
+        return {}

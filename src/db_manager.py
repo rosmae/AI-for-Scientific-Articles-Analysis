@@ -143,13 +143,41 @@ class DatabaseManager:
                     (article_id, "crossref", citation_count, datetime.now().date())
                 )
 
+                # Insert yearly citation history into citations_per_year
+                citation_history = article_data.get("CitationHistory", {})
+                for year, count in citation_history.items():
+                    cur.execute(
+                        """
+                        INSERT INTO citations_per_year (article_id, year, citation_count)
+                        VALUES (%s, %s, %s)
+                        """,
+                        (article_id, year, count)
+                    )
+
             self.conn.commit()
             return article_id
         except Exception as error:
             print(f"Error inserting article: {error}")
             self.conn.rollback()
             return None
-
+        
+    def insert_article_vector(self, article_id, vector):
+        if not self.connected and not self.connect():
+            return False
+        try:
+            with self.conn.cursor() as cur:
+                cur.execute("""
+                    INSERT INTO article_vectors (article_id, vector)
+                    VALUES (%s, %s)
+                    ON CONFLICT (article_id) DO UPDATE SET vector = EXCLUDED.vector
+                """, (article_id, vector))
+            self.conn.commit()
+            return True
+        except Exception as error:
+            print(f"Error inserting article vector: {error}")
+            self.conn.rollback()
+            return False
+    
     def get_all_articles(self):
         if not self.connected and not self.connect():
             return []
