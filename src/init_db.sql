@@ -72,3 +72,17 @@ CREATE TABLE opportunity_scores (
     overall_score REAL,
     computed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Create the title + abstract semantic vectors table
+CREATE TABLE IF NOT EXISTS article_vectors (
+    article_id INTEGER PRIMARY KEY REFERENCES articles(id) ON DELETE CASCADE,
+    vector FLOAT8[]
+);
+
+-- Create the citation history table
+CREATE TABLE IF NOT EXISTS citations_per_year (
+    id SERIAL PRIMARY KEY,
+    article_id INTEGER REFERENCES articles(id) ON DELETE CASCADE,
+    year INTEGER NOT NULL,
+    citation_count INTEGER
+);
