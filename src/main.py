@@ -16,6 +16,7 @@ from opportunity_score import compute_novelty_score, compute_citation_rate_score
 from transformers import AutoModel, AutoTokenizer
 from keybert import KeyBERT
 from sklearn.metrics.pairwise import cosine_similarity
+from clustering import run_clustering_pipeline
 
 # Load environment variables and connect to the database
 ENV_PATH = Path(__file__).parent.parent / ".env"
@@ -337,6 +338,13 @@ class PrimeTimeApp:
 
                 self.root.after(0, lambda: self.refresh_articles())
                 self.root.after(0, lambda: self.status_var.set(f"Added {count} new articles to database"))
+                
+                # Compute clustering and visualization
+                keyword_vector = self.compute_embedding(keyword_text)
+                def clustering_task():
+                    run_clustering_pipeline(keyword_embedding=keyword_vector)
+
+                threading.Thread(target=clustering_task, daemon=True).start()
                 
                 def score_task():
                     self.compute_and_display_opportunity_scores(search_id)

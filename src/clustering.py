@@ -1,10 +1,13 @@
 import os
-import sys
 import psycopg2
 import numpy as np
 import hdbscan
 import umap
+
+import matplotlib
+matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
+
 from dotenv import load_dotenv
 from statsmodels.tsa.arima.model import ARIMA
 from datetime import datetime
@@ -132,13 +135,19 @@ def generate_umap_visualization(article_ids, vectors, labels, keyword_embedding=
     for label in unique_labels:
         indices = [i for i, l in enumerate(labels) if l == label]
         cluster_embedding = embedding[indices]
-        plt.scatter(cluster_embedding[:,0], cluster_embedding[:,1], label=f"Cluster {label}", s=20)
+        plt.scatter(cluster_embedding[:, 0], cluster_embedding[:, 1], label=f"Cluster {label}", s=20)
 
     if keyword_embedding is not None:
         keyword_2d = reducer.transform(keyword_embedding.reshape(1, -1))
-        plt.scatter(keyword_2d[0,0], keyword_2d[0,1], color='red', s=150, marker='X', label='User Keyword')
+        plt.scatter(keyword_2d[0, 0], keyword_2d[0, 1], color='red', s=150, marker='X', label='User Keyword')
 
     plt.title("UMAP Projection of Clusters")
     plt.legend()
-    plt.savefig("cluster_umap.png")
-    plt.close()
+    plt.show()
+
+def run_clustering_pipeline(keyword_embedding=None):
+    article_ids, vectors = load_vectors()
+    labels = run_hdbscan(vectors)
+    update_article_labels(article_ids, labels)
+    compute_clusters(article_ids, vectors, labels)
+    generate_umap_visualization(article_ids, vectors, labels, keyword_embedding)
