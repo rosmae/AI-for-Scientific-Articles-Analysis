@@ -20,10 +20,10 @@ CREATE TABLE IF NOT EXISTS authors (
 -- Articles-Authors join table
 CREATE TABLE IF NOT EXISTS articles_authors (
     article_id INTEGER NOT NULL,
-    authord_id INTEGER NOT NULL,
-    PRIMARY KEY (article_id, authord_id),
+    author_id INTEGER NOT NULL,
+    PRIMARY KEY (article_id, author_id),
     FOREIGN KEY (article_id) REFERENCES articles(id) ON DELETE CASCADE,
-    FOREIGN KEY (authord_id) REFERENCES authors(id) ON DELETE CASCADE
+    FOREIGN KEY (author_id) REFERENCES authors(id) ON DELETE CASCADE
 );
 
 -- Citations table

@@ -130,7 +130,7 @@ class DatabaseManager:
                         author_id = cur.fetchone()[0]
 
                     cur.execute(
-                        "INSERT INTO articles_authors (article_id, authord_id) VALUES (%s, %s)",
+                        "INSERT INTO articles_authors (article_id, author_id) VALUES (%s, %s)",
                         (article_id, author_id)
                     )
 
@@ -161,7 +161,7 @@ class DatabaseManager:
                            c.count as citation_count
                     FROM articles a
                     LEFT JOIN articles_authors aa ON a.id = aa.article_id
-                    LEFT JOIN authors au ON aa.authord_id = au.id
+                    LEFT JOIN authors au ON aa.author_id = au.id
                     LEFT JOIN citations c ON a.id = c.article_id
                     GROUP BY a.id, c.count
                     ORDER BY a.id DESC
@@ -182,7 +182,7 @@ class DatabaseManager:
                            c.count as citation_count
                     FROM articles a
                     LEFT JOIN articles_authors aa ON a.id = aa.article_id
-                    LEFT JOIN authors au ON aa.authord_id = au.id
+                    LEFT JOIN authors au ON aa.author_id = au.id
                     LEFT JOIN citations c ON a.id = c.article_id
                     WHERE a.pmid = %s
                     GROUP BY a.id, c.count
@@ -320,7 +320,7 @@ class DatabaseManager:
                         o.overall_score
                     FROM articles a
                     LEFT JOIN articles_authors aa ON a.id = aa.article_id
-                    LEFT JOIN authors au ON aa.authord_id = au.id
+                    LEFT JOIN authors au ON aa.author_id = au.id
                     LEFT JOIN citations c ON a.id = c.article_id
                     LEFT JOIN search_articles sa ON a.id = sa.article_id
                     LEFT JOIN searches s ON sa.search_id = s.search_id
