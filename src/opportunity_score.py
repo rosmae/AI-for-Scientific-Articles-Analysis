@@ -16,7 +16,7 @@ def compute_novelty_score(avg_cosine_similarity, num_articles, all_novelty_raw_s
     return normalize_score(raw_score, all_novelty_raw_scores)
 
 # --- Citation Rate Score ---
-def compute_citation_rate_score(citation_counts, pub_dates, all_raw_rates):
+def compute_citation_velocity_score(citation_counts, pub_dates, all_raw_rates):
     rates = []
     for count, pub_date in zip(citation_counts, pub_dates):
         months = max((datetime.now().year - pub_date.year) * 12 + (datetime.now().month - pub_date.month), 1)
@@ -36,5 +36,5 @@ def compute_recency_score(pub_dates, all_recency_raw_scores):
     return normalize_score(raw_score, all_recency_raw_scores)
 
 # --- Final Opportunity Score ---
-def compute_opportunity_score(normalized_novelty, normalized_citation_rate, normalized_recency):
-    return round((normalized_novelty + normalized_citation_rate + normalized_recency) / 3, 3)
+def compute_opportunity_score(normalized_novelty, normalized_citation_velocity, normalized_recency):
+    return round((normalized_novelty + normalized_citation_velocity + normalized_recency) / 3, 3)

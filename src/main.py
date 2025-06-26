@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 from db_manager import DatabaseManager
 from pubmed_fetcher import search_pubmed, fetch_summaries
 from mesh_expander import expand_with_mesh
-from opportunity_score import compute_novelty_score, compute_citation_rate_score, compute_recency_score, compute_opportunity_score
+from opportunity_score import compute_novelty_score, compute_citation_velocity_score, compute_recency_score, compute_opportunity_score
 from transformers import AutoModel, AutoTokenizer
 from keybert import KeyBERT
 from sklearn.metrics.pairwise import cosine_similarity
@@ -471,13 +471,13 @@ class PrimeTimeApp:
 
             from opportunity_score import (
                 compute_novelty_score,
-                compute_citation_rate_score,
+                compute_citation_velocity_score,
                 compute_recency_score,
                 compute_opportunity_score
             )
 
             novelty = compute_novelty_score(avg_sim, num_articles, novelty_raws)
-            citation = compute_citation_rate_score(citation_counts, pub_dates, citation_raws)
+            citation = compute_citation_velocity_score(citation_counts, pub_dates, citation_raws)
             recency = compute_recency_score(pub_dates, recency_raws)
             score = compute_opportunity_score(novelty, citation, recency)
 

@@ -220,22 +220,22 @@ class DatabaseManager:
             print(f"Error retrieving article: {error}")
             return None
 
-    def insert_opportunity_score(self, search_id, novelty_score, citation_rate_score, recency_score, overall_score):
+    def insert_opportunity_score(self, search_id, novelty_score, citation_velocity_score, recency_score, overall_score):
         if not self.connected and not self.connect():
             return False
         try:
             with self.conn.cursor() as cur:
                 cur.execute("""
                     INSERT INTO opportunity_scores (
-                        search_id, novelty_score, citation_rate_score, recency_score, overall_score
+                        search_id, novelty_score, citation_velocity_score, recency_score, overall_score
                     ) VALUES (%s, %s, %s, %s, %s)
                     ON CONFLICT (search_id) DO UPDATE SET
                         novelty_score = EXCLUDED.novelty_score,
-                        citation_rate_score = EXCLUDED.citation_rate_score,
+                        citation_velocity_score = EXCLUDED.citation_velocity_score,
                         recency_score = EXCLUDED.recency_score,
                         overall_score = EXCLUDED.overall_score,
                         computed_at = CURRENT_TIMESTAMP
-                """, (search_id, novelty_score, float(citation_rate_score), recency_score, overall_score))
+                """, (search_id, novelty_score, float(citation_velocity_score), recency_score, overall_score))
             self.conn.commit()
             return True
         except Exception as error:
@@ -297,7 +297,7 @@ class DatabaseManager:
                 cur.execute("""
                     SELECT search_id,
                            novelty_score  AS novelty_raw,
-                           citation_rate_score AS citation_raw,
+                           citation_velocity_score AS citation_raw,
                            recency_score AS recency_raw
                     FROM opportunity_scores
                     WHERE novelty_score IS NOT NULL
@@ -343,7 +343,7 @@ class DatabaseManager:
                         s.max_results,
                         s.timestamp,
                         o.novelty_score,
-                        o.citation_rate_score,
+                        o.citation_velocity_score,
                         o.recency_score,
                         o.overall_score
                     FROM articles a
@@ -353,7 +353,7 @@ class DatabaseManager:
                     LEFT JOIN search_articles sa ON a.id = sa.article_id
                     LEFT JOIN searches s ON sa.search_id = s.search_id
                     LEFT JOIN opportunity_scores o ON s.search_id = o.search_id
-                    GROUP BY a.id, c.count, s.idea_text, s.keyword_text, s.max_results, s.timestamp, o.novelty_score, o.citation_rate_score, o.recency_score, o.overall_score
+                    GROUP BY a.id, c.count, s.idea_text, s.keyword_text, s.max_results, s.timestamp, o.novelty_score, o.citation_velocity_score, o.recency_score, o.overall_score
                     ORDER BY a.id DESC
                 """)
                 articles = cur.fetchall()
@@ -383,7 +383,7 @@ class DatabaseManager:
                         article["max_results"] or "",
                         article["timestamp"].strftime("%Y-%m-%d %H:%M:%S") if article["timestamp"] else "",
                         article["novelty_score"],
-                        article["citation_rate_score"],
+                        article["citation_velocity_score"],
                         article["recency_score"],
                         article["overall_score"]
                     ])
