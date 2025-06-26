@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 
 from dotenv import load_dotenv
 from datetime import datetime
-from forecast import compute_article_velocity  # imported from new module
+from forecast import compute_article_velocity  
 
 load_dotenv()
 
@@ -94,7 +94,7 @@ def generate_umap_visualization(article_ids, vectors, labels, keyword_embedding=
             continue
         indices = [i for i, l in enumerate(labels) if l == label]
         cluster_embedding = embedding[indices]
-        plt.scatter(cluster_embedding[:, 0], cluster_embedding[:, 1], label=f"Cluster {label}", s=20)
+        plt.scatter(cluster_embedding[:, 0], cluster_embedding[:, 1], label=f"Cluster {label +1}", s=20)
 
     if keyword_embedding is not None:
         keyword_2d = reducer.transform(keyword_embedding.reshape(1, -1))

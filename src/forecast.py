@@ -1,9 +1,13 @@
 import os
 import psycopg2
 import numpy as np
+import matplotlib.pyplot as plt
 
 from dotenv import load_dotenv
 from statsmodels.tsa.arima.model import ARIMA
+
+import warnings
+warnings.filterwarnings("ignore")
 
 load_dotenv()
 
@@ -60,3 +64,57 @@ def compute_article_velocity(article_id, forecast_horizon=3):
         return float(velocity)
     except:
         return 0.0
+
+def generate_forecast_visualization(search_id):
+    conn = connect_db()
+    with conn.cursor() as cur:
+        cur.execute("SELECT article_id FROM search_articles WHERE search_id = %s", (search_id,))
+        article_ids = [row[0] for row in cur.fetchall()]
+    conn.close()
+
+    if not article_ids:
+        print("No articles for this search.")
+        return
+
+    all_years = {}
+    for article_id in article_ids:
+        history = get_citation_history(article_id)
+        if not history:
+            continue
+        years, counts = history
+        cumulative = np.cumsum(counts)
+        for year, value in zip(years, cumulative):
+            all_years.setdefault(year, []).append(value)
+
+    if not all_years:
+        print("No citation history found.")
+        return
+
+    sorted_years = sorted(all_years.keys())
+    avg_cumulative = [np.mean(all_years[year]) for year in sorted_years]
+
+    try:
+        model = ARIMA(avg_cumulative, order=(1, 1, 0))
+        model_fit = model.fit()
+        forecast = model_fit.forecast(steps=3)
+        forecast_years = [sorted_years[-1] + i for i in range(1, 4)]
+
+        plt.figure(figsize=(10, 5))
+        plt.plot(sorted_years, avg_cumulative, label="Avg. Cumulative Citations")
+        plt.plot([sorted_years[-1], forecast_years[0]], 
+            [avg_cumulative[-1], forecast[0]], 
+            linestyle='dashed', color='orange')
+
+        plt.plot(forecast_years, forecast.tolist(), linestyle='dashed', label="Forecast")
+        plt.title("Topic Citation Growth Forecast")
+        plt.xlabel("Year")
+        plt.ylabel("Cumulative Citations")
+        plt.legend()
+        plt.tight_layout()
+        plt.show()
+
+    except Exception as e:
+        print("Forecast failed:", str(e))
+    
+def run_forecast_pipeline(search_id):
+    generate_forecast_visualization(search_id)

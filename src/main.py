@@ -17,6 +17,7 @@ from transformers import AutoModel, AutoTokenizer
 from keybert import KeyBERT
 from sklearn.metrics.pairwise import cosine_similarity
 from clustering import run_clustering_pipeline
+from forecast import run_forecast_pipeline
 
 # Load environment variables and connect to the database
 ENV_PATH = Path(__file__).parent.parent / ".env"
@@ -341,10 +342,11 @@ class PrimeTimeApp:
                 
                 # Compute clustering and visualization
                 keyword_vector = self.compute_embedding(keyword_text)
-                def clustering_task():
+                def clustering_and_forecast_task():
                     run_clustering_pipeline(keyword_embedding=keyword_vector)
+                    run_forecast_pipeline(search_id)
 
-                threading.Thread(target=clustering_task, daemon=True).start()
+                threading.Thread(target=clustering_and_forecast_task, daemon=True).start()
                 
                 def score_task():
                     self.compute_and_display_opportunity_scores(search_id)
