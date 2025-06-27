@@ -249,13 +249,19 @@ class DatabaseManager:
                         recency_score = EXCLUDED.recency_score,
                         overall_score = EXCLUDED.overall_score,
                         computed_at = CURRENT_TIMESTAMP
-                """, (search_id, novelty_score, float(citation_velocity_score), recency_score, overall_score))
+                """, (
+                    search_id, 
+                    float(novelty_score), 
+                    float(citation_velocity_score), 
+                    float(recency_score), 
+                    float(overall_score)
+                ))
             self.conn.commit()
             return True
         except Exception as error:
             print(f"Error inserting opportunity score: {error}")
             self.conn.rollback()
-            return False   
+            return False
 
     def get_latest_search_id(self):
         if not self.connected and not self.connect():

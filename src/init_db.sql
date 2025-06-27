@@ -76,7 +76,8 @@ CREATE TABLE IF NOT EXISTS opportunity_scores (
 -- Create the title + abstract semantic vectors table
 CREATE TABLE IF NOT EXISTS article_vectors (
     article_id INTEGER PRIMARY KEY REFERENCES articles(id) ON DELETE CASCADE,
-    vector FLOAT8[]
+    vector FLOAT8[],
+    cluster_label INTEGER
 );
 
 -- Create the citation history table

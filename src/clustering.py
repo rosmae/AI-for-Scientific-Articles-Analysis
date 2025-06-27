@@ -2,7 +2,13 @@ import os
 import psycopg2
 import numpy as np
 import hdbscan
-import umap
+
+try:
+    import umap.umap_ as umap
+    UMAP_AVAILABLE = True
+except ImportError:
+    print("Warning: UMAP not available. Clustering visualization will be skipped.")
+    UMAP_AVAILABLE = False
 
 import matplotlib
 matplotlib.use('TkAgg')
@@ -83,6 +89,8 @@ def compute_clusters(article_ids, vectors, labels):
     conn.close()
 
 def generate_umap_visualization(article_ids, vectors, labels, keyword_embedding=None):
+    if not UMAP_AVAILABLE:
+        return
     reducer = umap.UMAP(n_neighbors=10, min_dist=0.1, metric='cosine')
     embedding = reducer.fit_transform(vectors)
 
