@@ -42,7 +42,7 @@ def load_vectors():
     return article_ids, vectors
 
 def run_hdbscan(vectors):
-    clusterer = hdbscan.HDBSCAN(min_cluster_size=5)
+    clusterer = hdbscan.HDBSCAN(min_cluster_size=2)
     labels = clusterer.fit_predict(vectors)
     return labels
 
