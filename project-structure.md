@@ -28,53 +28,42 @@
 │   ├── tailwind.config.js     # Tailwind CSS configuration
 │   └── vite.config.js         # Vite configuration
 │
-├── backend/                   # FastAPI web backend
-│   ├── app/                   # Application code 
-│   │   ├── api/               # API endpoints
-│   │   │   ├── routers/       # Route handlers
-│   │   │   │   ├── articles.py
-│   │   │   │   ├── keywords.py
-│   │   │   │   ├── scoring.py
-│   │   │   │   └── search.py
-│   │   ├── core/              # Core functionality 
-│   │   │   ├── config.py      # Application configuration
-│   │   │   ├── ml.py          # ML model initialization
-│   │   │   └── utils.py       # Helper functions
-│   │   ├── db/                # Database models and operations 
-│   │   │   ├── database.py    # Database connection
-│   │   │   ├── models.py      # SQLAlchemy models
-│   │   │   └── operations.py  # Database operations
-│   │   ├── ml/                # Machine learning models 
-│   │   │   ├── train_model.py # Model training script
-│   │   │   ├── clustering.py  # Research clustering logic
-│   │   │   └── forecast.py    # Citation trend forecasting
-│   │   └── services/          # Business logic services
-│   │       ├── keyword_service.py  # Keyword extraction
-│   │       ├── mesh_service.py     # MeSH term expansion
-│   │       ├── pubmed_service.py   # PubMed API integration
-│   │       └── scoring_service.py  # Opportunity scoring
-│   ├── main.py                # FastAPI entry point
-│   └── requirements.txt       # Python dependencies
+├── backend/                   # Future FastAPI web backend (placeholder)
 │
-├── src/                       # Original desktop application (preserved)
-│   ├── model/                 # Machine learning models
-│   │   ├── train_model.py     # Model training script
-│   │   ├── generate_training_data.py  # Training data preparation
-│   │   └── trained_model.joblib  # Saved model file
-│   ├── clustering.py          # Research clustering algorithms
-│   ├── db_manager.py          # Database operations
-│   ├── forecast.py            # Citation forecasting
-│   ├── init_db.sql            # Database schema
-│   ├── main.py                # Desktop app entry point
+├── src/                       # Core application modules
+│   ├── clustering.py          # Research clustering algorithms using HDBSCAN/UMAP
+│   ├── database_reset.py      # Database reset utility
+│   ├── db_manager.py          # Database operations and connection management
+│   ├── forecast.py            # Citation trend forecasting with ARIMA
+│   ├── init_db.sql            # PostgreSQL database schema
+│   ├── main.py                # Desktop Tkinter GUI application
+│   ├── main_api.py            # FastAPI web service implementation
 │   ├── mesh_expander.py       # MeSH vocabulary expansion
-│   ├── opportunity_score.py   # Score calculation algorithms
+│   ├── opportunity_score.py   # Research opportunity scoring algorithms
 │   ├── pubmed_fetcher.py      # PubMed API integration
-│   └── database_reset.py      # Database reset utility
+│   ├── build/                 # PyInstaller build outputs
+│   ├── resources/             # Application resources (icons, etc.)
+│   └── __pycache__/          # Python bytecode cache
 │
+├── nous/                      # Backend utilities and scripts
+│   ├── run_backend.py         # Backend runner script
+│   ├── setup_backend.py       # Backend setup script
+│   └── start_backend.py       # Backend startup script
+│
+├── build/                     # Application build artifacts
+├── dist/                      # Distribution files
+├── __pycache__/              # Python bytecode cache
+│
+├── start_api.py               # FastAPI startup script
+├── debug_db.py                # Database debugging utility
+├── API_README.md              # API documentation
+├── requirements.txt           # Core Python dependencies
+├── requirements_api.txt       # API-specific Python dependencies
+├── .env                       # Environment variables (local)
 ├── .env.example               # Example environment variables
 ├── .gitattributes             # Git attributes configuration
 ├── .gitignore                 # Git ignore rules
-├── requirements.txt           # Python dependencies
+├── project-structure.md       # This file
 └── README.md                  # Project documentation
 
 

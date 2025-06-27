@@ -84,3 +84,7 @@ yarn-debug.log
 yarn-error.log
 src/model/training_data.npz
 src/model/trained_model.joblib
+
+#config files
+*.ps1
+

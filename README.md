@@ -32,15 +32,15 @@ A comprehensive platform for analyzing scientific research opportunities in medi
 
 ## 🏗️ Architecture
 
-The system consists of two main components:
+The system consists of multiple components:
 
-1. **Desktop Application**: Original implementation in `src/` folder using Tkinter GUI
-2. **Web Application**: Modern implementation with:
-   - **Frontend:** SvelteKit application for the user interface
-   - **Backend:** FastAPI service for handling API requests and business logic
-   - **Database:** PostgreSQL for storing articles, keywords, and analysis results
+1. **Desktop Application**: Tkinter GUI application in `src/main.py`
+2. **API Service**: FastAPI implementation in `src/main_api.py` 
+3. **Web Frontend**: SvelteKit application for the user interface (planned)
+4. **Core Modules**: Shared functionality in `src/` folder
+5. **Database**: PostgreSQL for storing articles, keywords, and analysis results
 
-Both applications share core functionality while offering different interfaces.
+The applications share core functionality while offering different interfaces.
 
 ## 🚀 Quick Start
 
@@ -51,7 +51,9 @@ Both applications share core functionality while offering different interfaces.
 
 ### Web Application Setup
 
-#### Backend Setup
+### API Service Setup
+
+#### Using the API startup script (Recommended)
 ```bash
 # Clone the repository
 git clone https://github.com/rosmae/AI-for-Scientific-Articles-Analysis.git
@@ -68,12 +70,20 @@ source venv/bin/activate
 # For Windows:
 venv\Scripts\activate
 
-# Install backend dependencies
-pip install -r requirements.txt
+# Install dependencies
+pip install -r requirements_api.txt
 
-# Run the FastAPI backend
-cd backend
-uvicorn main:app --reload
+# Start the API service
+python start_api.py
+```
+
+The API will be available at `http://localhost:8000` with documentation at `http://localhost:8000/docs`
+
+#### Alternative API startup
+```bash
+# From the src directory
+cd src
+uvicorn main_api:app --reload
 ```
 
 #### Frontend Setup
@@ -92,9 +102,10 @@ uvicorn main:app --reload
 
 Access the web application at `http://localhost:5173`
 
-### Desktop Application (Legacy)
+### Desktop Application
 ```bash
 # Make sure you're in the project root and venv is activated
+pip install -r requirements.txt
 cd src
 python main.py
 ```
@@ -125,43 +136,34 @@ python main.py
 
 ## API Endpoints
 
-The FastAPI backend exposes the following key endpoints:
+The FastAPI service (`src/main_api.py`) exposes the following key endpoints:
 
-- `/api/keywords/extract` - Extract keywords from research ideas
-- `/api/keywords/expand` - Expand keywords with MeSH terms
-- `/api/search/create` - Create a new search entry
-- `/api/search/execute` - Execute search on PubMed
-- `/api/articles` - Retrieve articles
-- `/api/scoring/{id}` - Get opportunity scores for a search
+- `GET /health` - API health check
+- `POST /keywords/generate` - Extract keywords from research ideas using BERT
+- `POST /search/pubmed` - Search PubMed and store articles
+- `GET /articles` - Retrieve all articles
+- `GET /articles/{pmid}` - Get specific article details
+- `GET /search/{search_id}/scores` - Get opportunity scores for a search
+- `GET /export/csv` - Export articles to CSV
+- `GET /searches` - Get search history
 
 API documentation is available at:
 - Swagger UI: http://localhost:8000/docs
 - ReDoc: http://localhost:8000/redoc
 
-## Machine Learning Model
+## Machine Learning Components
 
-The application includes a trained machine learning model for predicting opportunity scores:
+The application includes machine learning capabilities for research analysis:
 
-- **Model Training:** Run `python src/model/train_model.py` to train/retrain the model
-- **Training Data Generation:** `python src/model/generate_training_data.py` creates training data from your database
-- **Model Evaluation:** View model performance in the web interface
+### Core ML Modules
+- **Clustering Analysis** (`src/clustering.py`): HDBSCAN clustering with UMAP visualization
+- **Citation Forecasting** (`src/forecast.py`): ARIMA time-series modeling for citation trends  
+- **Opportunity Scoring** (`src/opportunity_score.py`): Multi-factor scoring algorithm
 
-### Opportunity Score Prediction
-- Uses RandomForestRegressor for opportunity prediction
-- Features include semantic embeddings, citation metrics, and publication trends
-- Trained on historical search and citation data
-- Visualize model performance in prediction vs. actual charts
-
-### Text Embedding
-- PubMedBERT for domain-specific text embeddings
-- KeyBERT for automatic keyword extraction
-- Semantic clustering using HDBSCAN
-- Dimensionality reduction with UMAP for visualization
-
-### Citation Analysis
-- ARIMA forecasting for citation trends
-- Citation velocity calculation for impact assessment
-- Historical citation data retrieval from CrossRef and OpenAlex
+### Text Processing
+- **PubMedBERT**: Domain-specific text embeddings for medical literature
+- **KeyBERT**: Automatic keyword extraction from research ideas
+- **MeSH Expansion** (`src/mesh_expander.py`): Medical vocabulary enhancement
 
 ## 🛡️ Database Features
 - PostgreSQL Backend: Robust storage for articles and analysis
@@ -184,49 +186,71 @@ The application includes a trained machine learning model for predicting opportu
 
 ## Technologies Used
 
-- **Backend:**
-  - FastAPI: Modern, high-performance web framework for building APIs
-  - SQLAlchemy: SQL toolkit and ORM
-  - PubMedBERT, KeyBERT: NLP models for medical text analysis
-  - scikit-learn, PyTorch: Machine learning frameworks
-  - NCBI E-utilities (PubMed), CrossRef: External APIs
+- **Core Application:**
+  - FastAPI: Modern web framework for API services
+  - Tkinter: Desktop GUI application framework
+  - PostgreSQL: Database for articles and analysis storage
+  - SQLAlchemy: Database ORM and operations
 
-- **Frontend:**
-  - Svelte: Reactive UI framework
-  - Chart.js: Interactive data visualizations
-  - Axios: HTTP client for API requests
-  - Svelte-routing: Client-side routing
-  - Tailwind CSS: Utility-first CSS framework
+- **Machine Learning & NLP:**
+  - PubMedBERT: Biomedical text embeddings
+  - KeyBERT: Keyword extraction
+  - scikit-learn: Machine learning algorithms (HDBSCAN, UMAP)
+  - ARIMA: Time-series forecasting for citations
+  - transformers: Hugging Face transformers library
+
+- **External APIs:**
+  - NCBI E-utilities: PubMed article retrieval
+  - CrossRef API: Citation data
+  - OpenAlex API: Additional citation metrics
+  - MeSH API: Medical vocabulary expansion
+
+- **Frontend (Planned):**
+  - SvelteKit: Reactive UI framework
+  - Chart.js: Data visualizations
+  - Tailwind CSS: Utility-first styling
 
 ## Deployment
 
-### Backend Deployment
-The backend can be deployed on any server that supports Python:
+### API Service Deployment
+The FastAPI service can be deployed on any Python-compatible server:
+
 ```bash
-cd backend
-uvicorn main:app --host 0.0.0.0 --port 8000 --workers 4
+# Production startup using start_api.py
+python start_api.py
+
+# Or directly with uvicorn
+cd src
+uvicorn main_api:app --host 0.0.0.0 --port 8000 --workers 4
 ```
 
-For production, consider using Gunicorn as a process manager:
+For production with Gunicorn:
 ```bash
-gunicorn -w 4 -k uvicorn.workers.UvicornWorker backend.main:app
+# From project root
+gunicorn -w 4 -k uvicorn.workers.UvicornWorker src.main_api:app
 ```
 
-### Frontend Deployment
-Build the frontend for production:
+### Desktop Application
+The desktop application can be packaged into an executable:
 ```bash
-cd frontend
-npm run build
+# Build standalone executable (requires PyInstaller)
+cd src
+python -m PyInstaller --onefile main.py
 ```
 
-The contents of the `frontend/public` directory can then be served by any static file server like Nginx, Apache, or Netlify.
+### Database Setup
+1. Install PostgreSQL
+2. Create database and user
+3. Configure `.env` file with credentials
+4. Run `python src/database_reset.py` to initialize schema
 
 ## Troubleshooting
 
-- **Database Connection Issues:** Verify PostgreSQL is running and credentials are correct
-- **Missing Libraries:** Ensure all dependencies are installed
-- **PubMed API Issues:** Check internet connection or try again later (API rate limits)
-- **CORS Issues:** Make sure the backend allows requests from your frontend origin
+- **Database Connection Issues:** Verify PostgreSQL is running and credentials in `.env` are correct
+- **Missing Dependencies:** Run `pip install -r requirements.txt` or `pip install -r requirements_api.txt`
+- **PubMed API Issues:** Check internet connection or API rate limits
+- **Import Errors:** Ensure you're in the correct directory and virtual environment is activated
+- **BERT Model Download:** First run may take time to download PubMedBERT model
 
 ## 🙏 Acknowledgments
 
