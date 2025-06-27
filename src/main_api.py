@@ -797,7 +797,7 @@ async def get_opportunity_scores(search_id: int):
         return OpportunityScoreResponse(
             search_id=search_id,
             novelty_score=latest_score["novelty_score"],
-            citation_score=latest_score["citation_score"],
+            citation_score=latest_score["citation_velocity_score"],
             recency_score=latest_score["recency_score"],
             overall_score=latest_score["overall_score"],
             recommendation="Score based on current search analysis"
