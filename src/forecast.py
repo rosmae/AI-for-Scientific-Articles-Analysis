@@ -53,14 +53,13 @@ def compute_article_velocity(article_id, forecast_horizon=3):
         return 0.0
 
     years, counts = data
-    years_sorted = sorted(years)
-    counts_sorted = np.cumsum([c for _, c in sorted(zip(years, counts))]).tolist()
+    counts_sorted = [c for _, c in sorted(zip(years, counts))]
 
     try:
-        model_arima = ARIMA(counts_sorted, order=(1,1,0))
+        model_arima = ARIMA(counts_sorted, order=(1, 1, 0))
         model_fit = model_arima.fit()
         forecast = model_fit.forecast(steps=forecast_horizon)
-        velocity = np.mean([(f - current_total) / current_total for f in forecast])
+        velocity = np.mean([(f - counts_sorted[-1]) / counts_sorted[-1] for f in forecast])
         return float(velocity)
     except:
         return 0.0
@@ -82,8 +81,7 @@ def generate_forecast_visualization(search_id):
         if not history:
             continue
         years, counts = history
-        cumulative = np.cumsum(counts)
-        for year, value in zip(years, cumulative):
+        for year, value in zip(years, counts):
             all_years.setdefault(year, []).append(value)
 
     if not all_years:
@@ -91,24 +89,24 @@ def generate_forecast_visualization(search_id):
         return
 
     sorted_years = sorted(all_years.keys())
-    avg_cumulative = [np.mean(all_years[year]) for year in sorted_years]
+    avg_counts = [np.mean(all_years[year]) for year in sorted_years]
 
     try:
-        model = ARIMA(avg_cumulative, order=(1, 1, 0))
+        model = ARIMA(avg_counts, order=(1, 1, 0))
         model_fit = model.fit()
         forecast = model_fit.forecast(steps=3)
         forecast_years = [sorted_years[-1] + i for i in range(1, 4)]
 
         plt.figure(figsize=(10, 5))
-        plt.plot(sorted_years, avg_cumulative, label="Avg. Cumulative Citations")
+        plt.plot(sorted_years, avg_counts, label="Avg. Yearly Citations")
         plt.plot([sorted_years[-1], forecast_years[0]], 
-            [avg_cumulative[-1], forecast[0]], 
+            [avg_counts[-1], forecast[0]], 
             linestyle='dashed', color='orange')
 
         plt.plot(forecast_years, forecast.tolist(), linestyle='dashed', label="Forecast")
         plt.title("Topic Citation Growth Forecast")
         plt.xlabel("Year")
-        plt.ylabel("Cumulative Citations")
+        plt.ylabel("Yearly Citations")
         plt.legend()
         plt.tight_layout()
         plt.show()
