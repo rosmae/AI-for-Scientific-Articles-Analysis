@@ -379,12 +379,18 @@ class PrimeTimeApp:
                 top_n=7
             )
 
-            # Filter: keep those with score ≥ threshold
-            keywords = [(phrase, score) for phrase, score in keywords if score >= 0.7]
+            # Filter: keep those with score >= threshold
+            # KeyBERT returns list of (keyword, score) tuples
+            filtered_keywords = []
+            for keyword_tuple in keywords:
+                if isinstance(keyword_tuple, tuple) and len(keyword_tuple) == 2:
+                    phrase, score = keyword_tuple
+                    if score >= 0.7:
+                        filtered_keywords.append(phrase)
 
             # Display results
             self.keywords_text.delete("1.0", tk.END)
-            self.keywords_text.insert(tk.END, "; ".join([kw[0] for kw in keywords]))
+            self.keywords_text.insert(tk.END, "; ".join(filtered_keywords))
 
         except Exception as e:
             messagebox.showerror("Error", f"Keyword extraction failed: {e}")
@@ -453,7 +459,7 @@ class PrimeTimeApp:
             avg_sim = float(np.mean(similarities))
 
             # Build raw scores from history
-            history = self.db.get_all_search_history()  # You’ll implement this in db_manager
+            history = self.db.get_all_search_history()  # You'll implement this in db_manager
             novelty_raws = []
             citation_raws = []
             recency_raws = []

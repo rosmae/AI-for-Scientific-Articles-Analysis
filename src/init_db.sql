@@ -64,10 +64,10 @@ CREATE TABLE IF NOT EXISTS search_articles (
 );
 
 -- Create the opportunity score and subscores table
-CREATE TABLE opportunity_scores (
+CREATE TABLE IF NOT EXISTS opportunity_scores (
     search_id INTEGER PRIMARY KEY REFERENCES searches(search_id) ON DELETE CASCADE,
     novelty_score REAL,
-    citation_rate_score REAL,
+    citation_velocity_score REAL,
     recency_score REAL,
     overall_score REAL,
     computed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -77,7 +77,6 @@ CREATE TABLE opportunity_scores (
 CREATE TABLE IF NOT EXISTS article_vectors (
     article_id INTEGER PRIMARY KEY REFERENCES articles(id) ON DELETE CASCADE,
     vector FLOAT8[]
-    cluster_label INTEGER;
 );
 
 -- Create the citation history table
@@ -89,7 +88,7 @@ CREATE TABLE IF NOT EXISTS citations_per_year (
 );
 
 -- Create clusters table
-CREATE TABLE clusters (
+CREATE TABLE IF NOT EXISTS clusters (
     cluster_label INTEGER PRIMARY KEY,
     centroid FLOAT8[],
     size INTEGER,

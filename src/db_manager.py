@@ -40,9 +40,23 @@ class DatabaseManager:
             schema_file = resource_path("init_db.sql")
             with open(schema_file, "r") as f:
                 sql_schema = f.read()
+            
+            # Split the SQL into individual statements and execute them separately
+            statements = [stmt.strip() for stmt in sql_schema.split(';') if stmt.strip()]
+            
             with self.conn.cursor() as cur:
-                cur.execute(sql_schema)
+                for statement in statements:
+                    if statement:  # Skip empty statements
+                        try:
+                            cur.execute(statement)
+                        except Exception as stmt_error:
+                            # Log the error but continue with other statements
+                            print(f"Warning: Could not execute statement: {stmt_error}")
+                            print(f"Statement: {statement[:100]}...")
+                            continue
+            
             self.conn.commit()
+            print("Database initialization completed successfully")
             return True
         except Exception as error:
             print(f"Error initializing database: {error}")
@@ -283,7 +297,6 @@ class DatabaseManager:
             print(f"Error retrieving articles by search: {error}")
             return []
 
-        # ---- NEW helper used by the UI scoring function ----
     def get_all_search_history(self):
         """
         Returns a list of dicts with keys that
@@ -305,6 +318,54 @@ class DatabaseManager:
                 return cur.fetchall()
         except Exception as error:
             print(f"Error retrieving search history: {error}")
+            return []
+
+    def get_opportunity_scores_by_search(self, search_id):
+        """
+        Get all opportunity scores for a specific search
+        """
+        if not self.connected and not self.connect():
+            return []
+        
+        try:
+            with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute("""
+                    SELECT search_id, novelty_score, citation_velocity_score, 
+                           recency_score, overall_score, computed_at
+                    FROM opportunity_scores
+                    WHERE search_id = %s
+                    ORDER BY computed_at DESC
+                """, (search_id,))
+                return cur.fetchall()
+        except Exception as error:
+            print(f"Error retrieving opportunity scores: {error}")
+            return []
+
+    def get_all_searches(self):
+        """
+        Get all searches with their metadata
+        """
+        if not self.connected and not self.connect():
+            return []
+        
+        try:
+            with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute("""
+                    SELECT s.search_id, s.idea_text, s.keyword_text, s.max_results, 
+                           s.timestamp, COUNT(sa.article_id) as article_count,
+                           o.novelty_score, o.citation_velocity_score, 
+                           o.recency_score, o.overall_score
+                    FROM searches s
+                    LEFT JOIN search_articles sa ON s.search_id = sa.search_id
+                    LEFT JOIN opportunity_scores o ON s.search_id = o.search_id
+                    GROUP BY s.search_id, s.idea_text, s.keyword_text, s.max_results, 
+                             s.timestamp, o.novelty_score, o.citation_velocity_score, 
+                             o.recency_score, o.overall_score
+                    ORDER BY s.timestamp DESC
+                """)
+                return cur.fetchall()
+        except Exception as error:
+            print(f"Error retrieving searches: {error}")
             return []
     
     def close(self):
