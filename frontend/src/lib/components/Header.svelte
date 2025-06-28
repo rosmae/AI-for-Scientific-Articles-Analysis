@@ -2,9 +2,12 @@
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <div class="flex justify-between items-center py-4">
       <div class="flex items-center">
-        <h1 class="text-2xl font-bold text-gray-900">
-          🔬 Prime Time Medical Research
-        </h1>
+        <div class="flex items-center space-x-3">
+          <img src="/icon.ico" alt="Prime Time Medical Research" class="h-8 w-8" />
+          <h1 class="text-2xl font-bold text-gray-900">
+            Prime Time Medical Research
+          </h1>
+        </div>
       </div>
       
       <nav class="hidden md:flex space-x-8">
