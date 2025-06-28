@@ -355,12 +355,11 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ### 🎓 Academic Supervision & Guidance
 
-Special thanks to our distinguished academic mentors from the **University of Medicine and Pharmacy "Carol Davila" Bucharest**:
+Special thanks to our distinguished academic mentors:
 
 - **Octavian Andronic** - Project Coordinator
   - **Medical Resident in General Surgery, University Assistant**
   - **Coordinator, Big Data Analysis Hub** – Center for Innovation and e-Health, UMFCD
-  - **Chair of Romanian Chapter** – European Association of Science Editors
   - For his expertise in medical data analysis and scientific publishing standards
 
 - **Lector Dr. Sebastian Stefaniga** - Course Coordinator

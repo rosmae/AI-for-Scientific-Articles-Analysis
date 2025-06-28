@@ -47,7 +47,7 @@ Proiect-AI/                    # Root directory
 │   ├── forecast.py                        # ARIMA time-series forecasting
 │   ├── database_reset.py                  # Database schema initialization
 │   └── init_db.sql                        # SQL schema definitions
-├── 📂 nous/                   # Legacy desktop application
+├── 📂 nous/                   # Legacy web application
 │   ├── run_backend.py
 │   ├── setup_backend.py
 │   └── start_backend.py
