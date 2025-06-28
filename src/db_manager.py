@@ -144,7 +144,7 @@ class DatabaseManager:
                         author_id = cur.fetchone()[0]
 
                     cur.execute(
-                        "INSERT INTO articles_authors (article_id, author_id) VALUES (%s, %s)",
+                        "                INSERT INTO articles_authors (article_id, author_id) VALUES (%s, %s)",
                         (article_id, author_id)
                     )
 

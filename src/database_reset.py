@@ -25,10 +25,14 @@ def reset_database():
             
             # Drop tables in reverse dependency order
             tables_to_drop = [
+                "clusters",
+                "citations_per_year",
+                "article_vectors",
                 "opportunity_scores",
                 "search_articles", 
+                "affiliations",
                 "citations",
-                "article_authors",
+                "articles_authors",
                 "searches",
                 "articles",
                 "authors"

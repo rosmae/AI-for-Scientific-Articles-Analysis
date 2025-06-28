@@ -36,11 +36,13 @@ export interface KeywordGenerationRequest {
 
 export interface KeywordGenerationResponse {
   keywords: string[];
-  expanded_keywords: string[];
+  scores: number[];
+  expanded_keywords?: string[];
 }
 
 export interface SearchRequest {
   keywords: string;
+  idea_text: string;
   max_results?: number;
   start_date?: string;
   end_date?: string;
@@ -49,6 +51,7 @@ export interface SearchRequest {
 export interface SearchResponse {
   search_id: number;
   articles_found: number;
+  articles_added: number;
   message: string;
 }
 
@@ -85,6 +88,7 @@ export const apiClient = {
     console.log('Searching PubMed with request:', request);
     const response = await api.post('/search/pubmed', {
       keywords: request.keywords.trim(),
+      idea_text: request.idea_text,
       max_results: request.max_results || 10,
       start_date: request.start_date || null,
       end_date: request.end_date || null

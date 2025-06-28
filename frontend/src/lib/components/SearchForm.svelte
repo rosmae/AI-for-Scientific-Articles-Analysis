@@ -24,15 +24,15 @@
     try {
       const response: KeywordGenerationResponse = await apiClient.generateKeywords(researchIdea);
       generatedKeywords = response.keywords || [];
-      expandedKeywords = response.expanded_keywords || [];
+      expandedKeywords = response.expanded_keywords || []; // This might be empty from the backend
       
       // Auto-fill keywords field
-      keywords = generatedKeywords.join(', ');
+      keywords = generatedKeywords.join('; '); // Use semicolons as backend expects
       
       // Show success notification
       addNotification({
         type: 'success',
-        message: `Generated ${generatedKeywords.length} keywords and ${expandedKeywords.length} MeSH terms`
+        message: `Generated ${generatedKeywords.length} keywords${expandedKeywords.length > 0 ? ` and ${expandedKeywords.length} MeSH terms` : ''}`
       });
       
     } catch (error) {
@@ -58,8 +58,20 @@
 
     try {
       console.log('Starting PubMed search...');
+      
+      // Ensure idea_text meets minimum length requirement (10 chars)
+      let ideaText = researchIdea?.trim() || '';
+      if (ideaText.length < 10) {
+        // If no research idea or too short, create a descriptive idea from keywords
+        ideaText = `Research investigation into: ${keywords}`;
+      }
+      
+      // Convert comma-separated keywords to semicolon-separated (backend format)
+      const formattedKeywords = keywords.includes(';') ? keywords : keywords.replace(/,/g, ';');
+      
       const response: SearchResponse = await apiClient.searchPubmed({
-        keywords: keywords,
+        keywords: formattedKeywords,
+        idea_text: ideaText,
         max_results: maxResults
       });
 
@@ -68,7 +80,7 @@
       // Show success notification
       addNotification({
         type: 'success',
-        message: `✅ Search completed! Found ${response.articles_found} articles (Search ID: ${response.search_id})`
+        message: `✅ ${response.message} (Search ID: ${response.search_id})`
       });
       
     } catch (error) {
@@ -129,7 +141,7 @@
       id="keywords"
       type="text"
       bind:value={keywords}
-      placeholder="Enter keywords separated by commas"
+      placeholder="Enter keywords separated by semicolons (e.g., gene editing; sickle cell; CRISPR)"
       class="input-field"
     />
   </div>

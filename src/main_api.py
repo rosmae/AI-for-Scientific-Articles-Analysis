@@ -667,9 +667,18 @@ async def search_pubmed_articles(request: SearchRequest, background_tasks: Backg
 async def run_background_analysis(search_id: int, keywords: str):
     """Run clustering, forecasting, and scoring in background"""
     try:
-        # Compute clustering and visualization
+        # Skip analysis if we don't have articles for this search
+        articles = db_manager.get_articles_by_search(search_id)
+        if not articles or len(articles) == 0:
+            print(f"No articles found for search {search_id}, skipping background analysis")
+            return
+        
+        # Compute clustering and visualization (only if we have articles)
         keyword_vector = compute_embedding(keywords)
-        run_clustering_pipeline(keyword_embedding=keyword_vector)
+        if len(keyword_vector) > 0:
+            run_clustering_pipeline(keyword_embedding=keyword_vector)
+        
+        # Run forecast pipeline
         run_forecast_pipeline(search_id)
         
         # Compute opportunity scores
