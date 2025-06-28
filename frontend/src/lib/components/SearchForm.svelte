@@ -3,14 +3,46 @@
   import { setLoading, setError, clearError, addNotification } from '../stores';
   import type { KeywordGenerationResponse, SearchResponse } from '../api';
   import KeywordPanel from './KeywordPanel.svelte';
+  import confetti from 'canvas-confetti';
 
   let researchIdea = '';
   let keywords = '';
   let maxResults = 10;
+  let startDate = '';
+  let endDate = '';
   let generatedKeywords: string[] = [];
   let expandedKeywords: string[] = [];
   let isGeneratingKeywords = false;
   let isSearching = false;
+  let showDateFilters = false;
+
+  // Set default date range (last 5 years)
+  const today = new Date();
+  const fiveYearsAgo = new Date(today.getFullYear() - 5, today.getMonth(), today.getDate());
+  
+  // Format dates for input fields (YYYY-MM-DD)
+  endDate = today.toISOString().split('T')[0];
+  startDate = fiveYearsAgo.toISOString().split('T')[0];
+
+  function triggerConfetti() {
+    // Trigger confetti celebration
+    confetti({
+      particleCount: 100,
+      spread: 70,
+      origin: { y: 0.6 },
+      colors: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6']
+    });
+    
+    // Trigger a second burst for extra celebration
+    setTimeout(() => {
+      confetti({
+        particleCount: 50,
+        spread: 45,
+        origin: { y: 0.7 },
+        colors: ['#3B82F6', '#10B981', '#F59E0B']
+      });
+    }, 250);
+  }
 
   async function generateKeywords() {
     if (!researchIdea.trim()) {
@@ -69,18 +101,28 @@
       // Convert comma-separated keywords to semicolon-separated (backend format)
       const formattedKeywords = keywords.includes(';') ? keywords : keywords.replace(/,/g, ';');
       
-      const response: SearchResponse = await apiClient.searchPubmed({
+      // Prepare search request with date filters if enabled
+      const searchRequest = {
         keywords: formattedKeywords,
         idea_text: ideaText,
-        max_results: maxResults
-      });
+        max_results: maxResults,
+        ...(showDateFilters && startDate && { start_date: startDate }),
+        ...(showDateFilters && endDate && { end_date: endDate })
+      };
+      
+      const response: SearchResponse = await apiClient.searchPubmed(searchRequest);
 
       console.log('Search completed:', response);
       
-      // Show success notification
+      // Trigger confetti if articles were successfully added
+      if (response.articles_added > 0) {
+        triggerConfetti();
+      }
+      
+      // Show success notification with confetti emoji
       addNotification({
         type: 'success',
-        message: `✅ ${response.message} (Search ID: ${response.search_id})`
+        message: `🎉 ${response.message} (Search ID: ${response.search_id})`
       });
       
     } catch (error) {
@@ -93,6 +135,34 @@
     } finally {
       isSearching = false;
       setLoading(false);
+    }
+  }
+
+  function setQuickDateRange(range: string) {
+    const today = new Date();
+    endDate = today.toISOString().split('T')[0];
+    
+    switch (range) {
+      case '1year':
+        const oneYearAgo = new Date(today.getFullYear() - 1, today.getMonth(), today.getDate());
+        startDate = oneYearAgo.toISOString().split('T')[0];
+        break;
+      case '2years':
+        const twoYearsAgo = new Date(today.getFullYear() - 2, today.getMonth(), today.getDate());
+        startDate = twoYearsAgo.toISOString().split('T')[0];
+        break;
+      case '5years':
+        const fiveYearsAgo = new Date(today.getFullYear() - 5, today.getMonth(), today.getDate());
+        startDate = fiveYearsAgo.toISOString().split('T')[0];
+        break;
+      case '10years':
+        const tenYearsAgo = new Date(today.getFullYear() - 10, today.getMonth(), today.getDate());
+        startDate = tenYearsAgo.toISOString().split('T')[0];
+        break;
+      case 'all':
+        startDate = '';
+        endDate = '';
+        break;
     }
   }
 </script>
@@ -147,18 +217,124 @@
   </div>
 
   <!-- Search Parameters -->
-  <div class="mb-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-    <div>
-      <label for="max-results" class="block text-sm font-medium text-gray-700 mb-2">
-        Max Results
-      </label>
-      <select id="max-results" bind:value={maxResults} class="input-field">
-        <option value={5}>5 articles</option>
-        <option value={10}>10 articles</option>
-        <option value={20}>20 articles</option>
-        <option value={50}>50 articles</option>
-      </select>
+  <div class="mb-4 space-y-4">
+    <!-- Max Results -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div>
+        <label for="max-results" class="block text-sm font-medium text-gray-700 mb-2">
+          Max Results
+        </label>
+        <select id="max-results" bind:value={maxResults} class="input-field">
+          <option value={5}>5 articles</option>
+          <option value={10}>10 articles</option>
+          <option value={20}>20 articles</option>
+          <option value={50}>50 articles</option>
+          <option value={100}>100 articles</option>
+        </select>
+      </div>
+      
+      <!-- Date Filter Toggle -->
+      <div class="md:col-span-2 flex items-end">
+        <button
+          type="button"
+          on:click={() => showDateFilters = !showDateFilters}
+          class="btn-secondary flex items-center space-x-2"
+        >
+          <span>📅</span>
+          <span>{showDateFilters ? 'Hide' : 'Show'} Date Filters</span>
+          <span class="transform transition-transform {showDateFilters ? 'rotate-180' : ''}">▼</span>
+        </button>
+      </div>
     </div>
+
+    <!-- Date Filters (collapsible) -->
+    {#if showDateFilters}
+      <div class="border border-gray-200 rounded-lg p-4 bg-gray-50 space-y-4">
+        <h3 class="text-sm font-medium text-gray-900 mb-3">📅 Publication Date Range</h3>
+        
+        <!-- Quick Date Range Buttons -->
+        <div class="flex flex-wrap gap-2 mb-4">
+          <button
+            type="button"
+            on:click={() => setQuickDateRange('1year')}
+            class="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200 transition-colors"
+          >
+            Last Year
+          </button>
+          <button
+            type="button"
+            on:click={() => setQuickDateRange('2years')}
+            class="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200 transition-colors"
+          >
+            Last 2 Years
+          </button>
+          <button
+            type="button"
+            on:click={() => setQuickDateRange('5years')}
+            class="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200 transition-colors"
+          >
+            Last 5 Years
+          </button>
+          <button
+            type="button"
+            on:click={() => setQuickDateRange('10years')}
+            class="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200 transition-colors"
+          >
+            Last 10 Years
+          </button>
+          <button
+            type="button"
+            on:click={() => setQuickDateRange('all')}
+            class="px-3 py-1 text-xs bg-gray-100 text-gray-700 rounded-full hover:bg-gray-200 transition-colors"
+          >
+            All Time
+          </button>
+        </div>
+
+        <!-- Date Picker Inputs -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label for="start-date" class="block text-sm font-medium text-gray-700 mb-2">
+              Start Date
+            </label>
+            <input
+              id="start-date"
+              type="date"
+              bind:value={startDate}
+              class="input-field"
+              max={endDate || undefined}
+            />
+          </div>
+          <div>
+            <label for="end-date" class="block text-sm font-medium text-gray-700 mb-2">
+              End Date
+            </label>
+            <input
+              id="end-date"
+              type="date"
+              bind:value={endDate}
+              class="input-field"
+              min={startDate || undefined}
+              max={new Date().toISOString().split('T')[0]}
+            />
+          </div>
+        </div>
+
+        <!-- Date Range Display -->
+        {#if startDate || endDate}
+          <div class="text-sm text-gray-600 bg-white rounded p-2 border">
+            <strong>Selected Range:</strong>
+            {#if startDate && endDate}
+              From {new Date(startDate).toLocaleDateString()} to {new Date(endDate).toLocaleDateString()}
+            {:else if startDate}
+              From {new Date(startDate).toLocaleDateString()} onwards
+            {:else if endDate}
+              Up to {new Date(endDate).toLocaleDateString()}
+            {/if}
+          </div>
+        {/if}
+      </div>
+    {/if}
   </div>
 
   <!-- Search Button -->
