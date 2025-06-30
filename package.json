@@ -1,0 +1,5 @@
+{
+  "devDependencies": {
+    "@types/canvas-confetti": "^1.9.0"
+  }
+}
