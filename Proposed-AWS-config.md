@@ -8,7 +8,7 @@ A comprehensive AWS architecture recommendation for hosting the AI-powered medic
 
 This configuration provides a scalable, secure, and cost-effective solution for hosting the full-stack application including SvelteKit frontend, FastAPI backend, PostgreSQL database, and machine learning models.
 
-**Updated with 2025 AWS best practices and professional recommendations from industry expert review.**
+**Updated with 2025 AWS best practices.**
 
 ---
 
