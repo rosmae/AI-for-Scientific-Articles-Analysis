@@ -437,7 +437,7 @@
                   style="width: {opportunityScores.citation_velocity_score * 100}%"
                 ></div>
               </div>
-              <p class="text-xs text-gray-600 mt-2">Measures the rate of citation growth and research momentum</p>
+              <p class="text-xs text-gray-600 mt-2">Measures citations per year since publication - how fast research is gaining impact</p>
             </div>
 
             <div class="p-4 border rounded-lg">

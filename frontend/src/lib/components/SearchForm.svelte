@@ -25,23 +25,43 @@
   startDate = fiveYearsAgo.toISOString().split('T')[0];
 
   function triggerConfetti() {
-    // Trigger confetti celebration
-    confetti({
-      particleCount: 100,
-      spread: 70,
-      origin: { y: 0.6 },
-      colors: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6']
-    });
-    
-    // Trigger a second burst for extra celebration
-    setTimeout(() => {
+    try {
+      console.log('Triggering confetti celebration!');
+      
+      // First burst - main celebration
       confetti({
-        particleCount: 50,
-        spread: 45,
-        origin: { y: 0.7 },
-        colors: ['#3B82F6', '#10B981', '#F59E0B']
+        particleCount: 150,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'],
+        zIndex: 9999
       });
-    }, 250);
+      
+      // Second burst - delayed for extra effect
+      setTimeout(() => {
+        confetti({
+          particleCount: 80,
+          spread: 45,
+          origin: { y: 0.7 },
+          colors: ['#3B82F6', '#10B981', '#F59E0B'],
+          zIndex: 9999
+        });
+      }, 300);
+      
+      // Third burst - final celebration
+      setTimeout(() => {
+        confetti({
+          particleCount: 50,
+          spread: 120,
+          origin: { y: 0.8 },
+          colors: ['#10B981', '#F59E0B'],
+          zIndex: 9999
+        });
+      }, 600);
+      
+    } catch (error) {
+      console.error('Error triggering confetti:', error);
+    }
   }
 
   async function generateKeywords() {
@@ -115,8 +135,11 @@
       console.log('Search completed:', response);
       
       // Trigger confetti if articles were successfully added
-      if (response.articles_added > 0) {
+      if (response.articles_added && response.articles_added > 0) {
+        console.log(`Articles added: ${response.articles_added} - triggering confetti!`);
         triggerConfetti();
+      } else {
+        console.log(`No articles added (${response.articles_added}) - no confetti`);
       }
       
       // Show success notification with confetti emoji
@@ -363,6 +386,16 @@
       class="btn-secondary"
     >
       🗑️ Clear
+    </button>
+    
+    <!-- Test Confetti Button (for debugging) -->
+    <!----><button
+      type="button"
+      on:click={triggerConfetti}
+      class="px-4 py-2 text-sm bg-yellow-100 text-yellow-700 rounded-lg hover:bg-yellow-200 transition-colors"
+      title="Test confetti animation"
+    >
+      🎉 Test Confetti
     </button>
   </div>
 </div>
